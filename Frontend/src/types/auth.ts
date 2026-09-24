@@ -1,0 +1,1 @@
+export type UserRole = 'rh' | 'colaborador' | 'gestor';
