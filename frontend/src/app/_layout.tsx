@@ -10,6 +10,7 @@ function Routes() {
       {/* Só acessível quando NÃO está logado */}
       <Stack.Protected guard={!user}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="concluir-conta" />
       </Stack.Protected>
 
       {/* Cada área só abre para o perfil correspondente */}
@@ -17,7 +18,7 @@ function Routes() {
         <Stack.Screen name="rh" />
       </Stack.Protected>
       <Stack.Protected guard={user?.role === 'colaborador'}>
-        <Stack.Screen name="colaborador/index" />
+        <Stack.Screen name="colaborador" />
       </Stack.Protected>
       <Stack.Protected guard={user?.role === 'gestor'}>
         <Stack.Screen name="gestor/index" />

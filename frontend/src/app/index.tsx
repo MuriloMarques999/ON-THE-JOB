@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Redirect, type Href } from 'expo-router';
-import { useState } from 'react';
+import { Redirect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandHeader } from '@/components/brand-header';
+import { SuccessBanner } from '@/components/success-banner';
 import { useAuth, type Role } from '@/context/auth-context';
 
 const PERFIS: { id: Role; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
@@ -23,18 +25,32 @@ const PERFIS: { id: Role; label: string; icon: keyof typeof MaterialCommunityIco
 
 export default function LoginScreen() {
   const { user, login } = useAuth();
-  const [perfil, setPerfil] = useState<Role>('rh');
+  const router = useRouter();
+  const params = useLocalSearchParams<{ conta?: string; perfil?: string }>();
+  const perfilInicial: Role = params.perfil === 'colaborador' || params.perfil === 'gestor' ? params.perfil : 'rh';
+  const [perfil, setPerfil] = useState<Role>(perfilInicial);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
 
-  // Se o uusáiro estiver logado, vai direto para a área do perfil.
-  if (user) return <Redirect href={`/${user.role}` as Href} />;
+  // Vindo da conclusão de cadastro: mostra "Conta criada com sucesso!"
+  const [avisoConta, setAvisoConta] = useState(params.conta === 'criada');
+  useEffect(() => {
+    if (params.conta === 'criada') setAvisoConta(true);
+  }, [params.conta]);
+
+  function fecharAviso() {
+    setAvisoConta(false);
+    router.setParams({ conta: '' });
+  }
+
+  // Já logado? vai direto para a área do perfil.
+    if (user) return <Redirect href={`/${user.role}` as Href} />;
 
   function entrar() {
     const result = login({ role: perfil, email, senha });
     if (!result.ok) setErro(result.error);
-    // Sucesso: o estado `user` muda e o <Redirect> acima leva para /rh, /colaborador ou /gestor.
+    // Sucesso: o estado `user` muda e o <Redirect> acima leva para a área do perfil.
   }
 
   return (
@@ -43,14 +59,7 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          {/* Marca */}
-          <View style={styles.brand}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>OJ</Text>
-            </View>
-            <Text style={styles.brandName}>On the job</Text>
-            <Text style={styles.tagline}>Novo colaborador, nova jornada digital.</Text>
-          </View>
+          <BrandHeader />
 
           {/* Título */}
           <View style={styles.intro}>
@@ -116,6 +125,13 @@ export default function LoginScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <SuccessBanner
+        visible={avisoConta}
+        titulo="Conta criada com sucesso!"
+        mensagem="Faça seu login para acessar a plataforma."
+        onClose={fecharAviso}
+      />
     </SafeAreaView>
   );
 }
@@ -128,11 +144,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0EFF0' },
   container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 40, paddingBottom: 40, width: '100%', maxWidth: 480, alignSelf: 'center' },
 
-  brand: { alignItems: 'center' },
-  logo: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#4AA3B3', alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  logoText: { color: '#fff', fontSize: 15, fontWeight: '500' },
-  brandName: { fontSize: 36, fontWeight: '800', color: '#111', letterSpacing: -0.5 },
-  tagline: { fontSize: 10, color: '#111', marginTop: 2 },
 
   intro: { alignItems: 'center', marginTop: 44 },
   title: { fontSize: 26, fontWeight: '800', color: '#111' },
