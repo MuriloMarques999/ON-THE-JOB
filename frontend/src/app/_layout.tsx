@@ -14,7 +14,7 @@ function Routes() {
 
       {/* Cada área só abre para o perfil correspondente */}
       <Stack.Protected guard={user?.role === 'rh'}>
-        <Stack.Screen name="rh/index" />
+        <Stack.Screen name="rh" />
       </Stack.Protected>
       <Stack.Protected guard={user?.role === 'colaborador'}>
         <Stack.Screen name="colaborador/index" />

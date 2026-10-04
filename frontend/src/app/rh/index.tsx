@@ -1,8 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppHeader } from '@/components/app-header';
 import { useAuth } from '@/context/auth-context';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -37,27 +39,13 @@ const GESTORES = [
 /* ------------------------------------------------------------------ */
 
 export default function HomeRH() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const router = useRouter();
   const primeiroNome = user?.nome.split(' ')[0] ?? '';
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* Cabeçalho */}
-      <View style={s.header}>
-        <Pressable accessibilityLabel="Abrir menu" hitSlop={8} onPress={() => {}}>
-          <MaterialCommunityIcons name="menu" size={28} color={TEAL} />
-        </Pressable>
-
-        <View style={s.logo}>
-          <Text style={s.logoText}>OJ</Text>
-        </View>
-
-        {/* Provisório: tocar em "Perfil RH" faz logout, para facilitar os testes */}
-        <Pressable onPress={logout} style={s.perfil} accessibilityLabel="Perfil RH. Tocar para sair">
-          <Text style={s.perfilLabel}>Perfil</Text>
-          <Text style={s.perfilNome}>RH</Text>
-        </Pressable>
-      </View>
+      <AppHeader perfil="RH" />
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {/* Boas-vindas */}
@@ -71,11 +59,11 @@ export default function HomeRH() {
 
         {/* Ações principais */}
         <View style={s.acoes}>
-          <Pressable style={s.botao} onPress={() => {}}>
+          <Pressable style={s.botao} onPress={() => router.push('/rh/cadastrar-colaborador' as Href)}>
             <MaterialCommunityIcons name="account-plus-outline" size={20} color="#fff" />
             <Text style={s.botaoTexto}>Cadastrar novo colaborador</Text>
           </Pressable>
-          <Pressable style={s.botao} onPress={() => {}}>
+          <Pressable style={s.botao} onPress={() => router.push('/rh/cadastrar-gestor' as Href)}>
             <MaterialCommunityIcons name="account-plus-outline" size={20} color="#fff" />
             <Text style={s.botaoTexto}>Cadastrar novo Gestor</Text>
           </Pressable>
@@ -172,12 +160,6 @@ const SUPERFICIE = '#D9D9D9';
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F0EFF0' },
 
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#E2E2E2' },
-  logo: { position: 'absolute', left: 52, width: 32, height: 32, borderRadius: 16, backgroundColor: '#4AA3B3', alignItems: 'center', justifyContent: 'center' },
-  logoText: { color: '#fff', fontSize: 11, fontWeight: '500' },
-  perfil: { alignItems: 'flex-end' },
-  perfilLabel: { fontSize: 11, color: '#222' },
-  perfilNome: { fontSize: 13, fontWeight: '800', color: '#111' },
 
   content: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 24, paddingBottom: 48 },
 
