@@ -12,7 +12,7 @@ type AuthContextType = {
   logout: () => void;
 };
 
-// ⚠️ Usuários de teste. Troque por chamada ao seu backend (pasta /backend) quando estiver pronto.
+// Usuários de teste. Troque por chamada ao seu backend (pasta /backend) quando estiver pronto.
 const USERS: (User & { senha: string })[] = [
   { nome: 'Equipe RH', email: 'rh@platform.com', senha: '123456', role: 'rh' },
   { nome: 'Colaborador', email: 'colaborador@platform.com', senha: '123456', role: 'colaborador' },
