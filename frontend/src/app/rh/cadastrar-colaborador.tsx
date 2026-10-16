@@ -14,11 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
+import { useCadastro, useGestores } from '@/data/data-context';
 import { SuccessBanner } from '@/components/success-banner';
 import { Campo, EMAIL_RE, formatarTelefone, formStyles, PLACEHOLDER } from '@/components/form-campo';
-
-// Lista de exemplo — virá do backend depois.
-const GESTORES = ['João Vitor Nogueira', 'Carlos Meneses'];
 
 type Form = { nome: string; email: string; telefone: string; cargo: string; gestor: string };
 type Erros = Partial<Record<keyof Form, string>>;
@@ -37,6 +35,8 @@ function validar(f: Form): Erros {
 
 export default function CadastrarColaborador() {
   const router = useRouter();
+  const gestores = useGestores();
+  const { cadastrarColaborador } = useCadastro();
   const [form, setForm] = useState<Form>(VAZIO);
   const [erros, setErros] = useState<Erros>({});
   const [listaAberta, setListaAberta] = useState(false);
@@ -58,8 +58,18 @@ export default function CadastrarColaborador() {
     setErros(e);
     if (Object.keys(e).length > 0) return;
 
-    // TODO backend: enviar `form` para a API. Por enquanto só simulamos o sucesso.
-    console.log('Novo colaborador (simulação):', form);
+    const resultado = cadastrarColaborador({
+      nome: form.nome,
+      email: form.email,
+      telefone: form.telefone,
+      cargo: form.cargo,
+      gestorId: form.gestor,
+    });
+    if (!resultado.ok) {
+      setErros({ email: resultado.error });
+      return;
+    }
+
     setForm(VAZIO);
     setSucesso(true);
   }
@@ -134,22 +144,22 @@ export default function CadastrarColaborador() {
                 accessibilityRole="button"
                 accessibilityState={{ expanded: listaAberta }}>
                 <Text style={[s.selectTexto, !form.gestor && { color: PLACEHOLDER }]}>
-                  {form.gestor || 'Ex.: João Nogueira'}
+                  {gestores.find((g) => g.id === form.gestor)?.nome || 'Ex.: João Nogueira'}
                 </Text>
                 <MaterialCommunityIcons name={listaAberta ? 'chevron-up' : 'chevron-down'} size={24} color={TEAL_ESCURO} />
               </Pressable>
 
               {listaAberta && (
                 <View style={s.lista}>
-                  {GESTORES.map((g) => (
+                  {gestores.map((g) => (
                     <Pressable
-                      key={g}
+                      key={g.id}
                       style={s.opcao}
                       onPress={() => {
-                        alterar('gestor', g);
+                        alterar('gestor', g.id);
                         setListaAberta(false);
                       }}>
-                      <Text style={s.opcaoTexto}>{g}</Text>
+                      <Text style={s.opcaoTexto}>{g.nome}</Text>
                     </Pressable>
                   ))}
                 </View>

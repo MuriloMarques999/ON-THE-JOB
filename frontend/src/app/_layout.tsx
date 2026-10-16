@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { DataProvider } from '@/data/data-context';
 
 function Routes() {
   const { user } = useAuth();
@@ -30,7 +31,9 @@ function Routes() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Routes />
+      <DataProvider>
+        <Routes />
+      </DataProvider>
     </AuthProvider>
   );
 }

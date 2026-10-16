@@ -5,29 +5,14 @@ import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
 import { ProgressBar } from '@/components/progress-bar';
 import { primeiroNomeDe, useAuth } from '@/context/auth-context';
-
-/* ------------------------------------------------------------------ */
-/* Dados de exemplo — troque por chamadas à API quando o backend vier  */
-/* ------------------------------------------------------------------ */
-const PROGRESSO = { concluidas: 10, total: 20 };
-
-// Lista vazia = "Tudo em dia!". Exemplo de item: { titulo: 'Assinar contrato', prazo: '15/09/2026' }
-const PROXIMAS_ATIVIDADES: { titulo: string; prazo: string }[] = [];
-
-const FEEDBACKS = [
-  {
-    texto: 'Boa evolução técnica, está se ambientando no ambiente de trabalho e se aprofundando nas ferramentas internas.',
-    autor: 'João Vitor Nogueira',
-    data: '11/09/2026',
-  },
-];
-
-/* ------------------------------------------------------------------ */
+import { useHomeColaborador } from '@/data/data-context';
+import { formatarData, ROTULO_STATUS_ATIVIDADE } from '@/data/format';
 
 export default function HomeColaborador() {
   const { user } = useAuth();
+  const home = useHomeColaborador();
   const primeiroNome = primeiroNomeDe(user?.nome);
-  const percentual = Math.round((PROGRESSO.concluidas / PROGRESSO.total) * 100);
+  const percentual = home.total ? Math.round((home.concluidas / home.total) * 100) : 0;
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -52,7 +37,7 @@ export default function HomeColaborador() {
               <ProgressBar percent={percentual} />
             </View>
             <Text style={s.miudo}>
-              {PROGRESSO.concluidas} de {PROGRESSO.total} atividades concluídas
+              {home.concluidas} de {home.total} atividades concluídas
             </Text>
           </Card>
 
@@ -60,13 +45,15 @@ export default function HomeColaborador() {
           <Card>
             <Text style={s.cardTitulo}>Próximas atividades</Text>
 
-            {PROXIMAS_ATIVIDADES.length === 0 ? (
+            {home.proximas.length === 0 ? (
               <Text style={s.miudo}>Tudo em dia! Parabéns!</Text>
             ) : (
-              PROXIMAS_ATIVIDADES.map((a) => (
-                <View key={a.titulo} style={s.linha}>
+              home.proximas.map((a) => (
+                <View key={a.id} style={s.linha}>
                   <Text style={s.nome}>{a.titulo}</Text>
-                  <Text style={s.miudo}>Prazo: {a.prazo}</Text>
+                  <Text style={s.miudo}>
+                    Prazo: {formatarData(a.prazo)} • {ROTULO_STATUS_ATIVIDADE[a.status]}
+                  </Text>
                 </View>
               ))
             )}
@@ -79,14 +66,18 @@ export default function HomeColaborador() {
           {/* Feedbacks */}
           <Card>
             <Text style={s.cardTitulo}>Feedbacks recebidos</Text>
-            {FEEDBACKS.map((f) => (
-              <View key={f.texto} style={s.feedback}>
-                <Text style={s.feedbackTexto}>{f.texto}</Text>
-                <Text style={s.feedbackAutor}>
-                  {f.autor} • {f.data}
-                </Text>
-              </View>
-            ))}
+            {home.feedbacks.length === 0 ? (
+              <Text style={s.miudo}>Você ainda não recebeu feedbacks.</Text>
+            ) : (
+              home.feedbacks.map((f) => (
+                <View key={f.id} style={s.feedback}>
+                  <Text style={s.feedbackTexto}>{f.texto}</Text>
+                  <Text style={s.feedbackAutor}>
+                    {f.autor} • {formatarData(f.data)}
+                  </Text>
+                </View>
+              ))
+            )}
           </Card>
         </View>
       </ScrollView>

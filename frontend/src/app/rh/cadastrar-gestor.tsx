@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
+import { useCadastro } from '@/data/data-context';
 import { SuccessBanner } from '@/components/success-banner';
 import { Campo, EMAIL_RE, formatarTelefone, formStyles, PLACEHOLDER } from '@/components/form-campo';
 
@@ -33,6 +34,7 @@ function validar(f: Form): Erros {
 
 export default function CadastrarGestor() {
   const router = useRouter();
+  const { cadastrarGestor } = useCadastro();
   const [form, setForm] = useState<Form>(VAZIO);
   const [erros, setErros] = useState<Erros>({});
   const [sucesso, setSucesso] = useState(false);
@@ -53,8 +55,12 @@ export default function CadastrarGestor() {
     setErros(e);
     if (Object.keys(e).length > 0) return;
 
-    // TODO backend: enviar `form` para a API. Por enquanto só simulamos o sucesso.
-    console.log('Novo gestor (simulação):', form);
+    const resultado = cadastrarGestor(form);
+    if (!resultado.ok) {
+      setErros({ email: resultado.error });
+      return;
+    }
+
     setForm(VAZIO);
     setSucesso(true);
   }

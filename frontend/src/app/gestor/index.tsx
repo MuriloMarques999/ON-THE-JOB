@@ -6,43 +6,24 @@ import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
 import { ProgressBar } from '@/components/progress-bar';
 import { primeiroNomeDe, useAuth } from '@/context/auth-context';
+import { useHomeGestor } from '@/data/data-context';
+import { formatarData } from '@/data/format';
+import type { StatusJornada } from '@/data/types';
 
-/* ------------------------------------------------------------------ */
-/* Dados de exemplo — troque por chamadas à API quando o backend vier  */
-/* ------------------------------------------------------------------ */
-type Status = 'atrasado' | 'andamento';
-
-const STATUS: Record<Status, { label: string; cor: string }> = {
-  atrasado: { label: 'Atrasado', cor: '#B79A9C' },
-  andamento: { label: 'Em andamento', cor: '#8F95B4' },
+const STATUS: Record<StatusJornada, { label: string; cor: string }> = {
+  atrasada: { label: 'Atrasado', cor: '#B79A9C' },
+  em_andamento: { label: 'Em andamento', cor: '#8F95B4' },
+  concluida: { label: 'Concluída', cor: '#8FB59A' },
 };
-
-const EQUIPE: {
-  nome: string;
-  cargo: string;
-  inicio: string;
-  progresso: number;
-  pendencias: number;
-  status: Status;
-}[] = [
-  { nome: 'Anne Carlini', cargo: 'Product Manager', inicio: '01/09/2026', progresso: 50, pendencias: 10, status: 'atrasado' },
-  { nome: 'Anne Carlini', cargo: 'Product Manager', inicio: '01/09/2026', progresso: 50, pendencias: 10, status: 'andamento' },
-];
-
-const ATENCAO: { nome: string; cargo: string; data: string; pendencia: 'assinatura' | 'feedback' }[] = [
-  { nome: 'Anne Carlini', cargo: 'Product Manager', data: '01/09/2026', pendencia: 'assinatura' },
-  { nome: 'Matheus Silva Santos', cargo: 'Desenvolvedor', data: '10/09/2026', pendencia: 'feedback' },
-];
 
 const PENDENCIA = {
   assinatura: { label: 'Pendente assinatura', icon: 'square-edit-outline' },
   feedback: { label: 'Pendente feedback', icon: 'format-quote-close' },
 } as const;
 
-/* ------------------------------------------------------------------ */
-
 export default function HomeGestor() {
   const { user } = useAuth();
+  const home = useHomeGestor();
   const primeiroNome = primeiroNomeDe(user?.nome);
 
   return (
@@ -64,23 +45,27 @@ export default function HomeGestor() {
           <Card>
             <CardCabecalho titulo="Minha Equipe" />
 
-            {EQUIPE.map((m, i) => (
-              <View key={`${m.nome}-${i}`} style={[s.item, i < EQUIPE.length - 1 && s.itemDivisor]}>
+            {home.equipe.length === 0 && <Text style={s.vazio}>Nenhum colaborador vinculado a você.</Text>}
+
+            {home.equipe.map((m, i) => (
+              <View key={m.id} style={[s.item, i < home.equipe.length - 1 && s.itemDivisor]}>
                 <Text style={s.nome}>{m.nome}</Text>
                 <Text style={s.miudo}>
-                  {m.cargo} • Início {m.inicio}
+                  {m.cargo} • Início {formatarData(m.dataInicio)}
                 </Text>
 
                 <View style={s.progressoLinha}>
                   <View style={{ flex: 1 }}>
-                    <ProgressBar percent={m.progresso} height={7} />
+                    <ProgressBar percent={m.percentual} height={7} />
                   </View>
-                  <Text style={s.percentual}>{m.progresso}%</Text>
+                  <Text style={s.percentual}>{m.percentual}%</Text>
                 </View>
 
                 <View style={s.pilulas}>
                   <View style={[s.pilula, { backgroundColor: '#9DB9BD' }]}>
-                    <Text style={s.pilulaTexto}>{m.pendencias} pendências</Text>
+                    <Text style={s.pilulaTexto}>
+                      {m.pendencias} {m.pendencias === 1 ? 'pendência' : 'pendências'}
+                    </Text>
                   </View>
                   <View style={[s.pilula, { backgroundColor: STATUS[m.status].cor }]}>
                     <Text style={s.pilulaTexto}>{STATUS[m.status].label}</Text>
@@ -94,14 +79,16 @@ export default function HomeGestor() {
           <Card>
             <CardCabecalho titulo="Precisa da sua atenção" />
 
-            {ATENCAO.map((a, i) => {
-              const p = PENDENCIA[a.pendencia];
+            {home.atencao.length === 0 && <Text style={s.vazio}>Nada pendente por aqui.</Text>}
+
+            {home.atencao.map((a, i) => {
+              const p = PENDENCIA[a.tipo];
               return (
-                <View key={`${a.nome}-${i}`} style={[s.atencaoLinha, i < ATENCAO.length - 1 && s.itemDivisor]}>
+                <View key={a.id} style={[s.atencaoLinha, i < home.atencao.length - 1 && s.itemDivisor]}>
                   <View style={{ flex: 1 }}>
                     <Text style={s.nome}>{a.nome}</Text>
                     <Text style={s.miudo}>
-                      {a.cargo} • {a.data}
+                      {a.cargo} • {formatarData(a.data)}
                     </Text>
                   </View>
 
@@ -142,6 +129,7 @@ const s = StyleSheet.create({
   cabecalho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: '#A9A9A9' },
   cardTitulo: { fontSize: 16, fontWeight: '800', color: '#111' },
   verTudo: { fontSize: 11, color: '#111' },
+  vazio: { marginTop: 12, fontSize: 12, color: '#444' },
 
   item: { paddingVertical: 12 },
   itemDivisor: { borderBottomWidth: 1, borderBottomColor: '#C4C4C4' },

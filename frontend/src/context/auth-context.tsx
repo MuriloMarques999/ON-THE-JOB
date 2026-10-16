@@ -17,7 +17,7 @@ type AuthContextType = {
 const USERS: (User & { senha: string })[] = [
   { nome: 'Camila Rocha', email: 'rh@platform.com', senha: '123456', role: 'rh' },
   { nome: 'Anne Carlini', email: 'colaborador@platform.com', senha: '123456', role: 'colaborador' },
-  { nome: 'João Nogueira', email: 'gestor@platform.com', senha: '123456', role: 'gestor' },
+  { nome: 'João Vitor Nogueira', email: 'gestor@platform.com', senha: '123456', role: 'gestor' },
 ];
 
 const AuthContext = createContext<AuthContextType | null>(null);
