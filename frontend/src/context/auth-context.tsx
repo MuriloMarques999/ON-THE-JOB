@@ -18,8 +18,8 @@ const USERS: (User & { senha: string })[] = [
   { nome: 'Camila Rocha', email: 'rh@platform.com', senha: '123456', role: 'rh' },
   { nome: 'Anne Carlini', email: 'colaborador@platform.com', senha: '123456', role: 'colaborador' },
   { nome: 'João Vitor Nogueira', email: 'gestor@platform.com', senha: '123456', role: 'gestor' },
+  { nome: 'Marina Alves', email: 'marina.alves@platform.com', senha: '123456', role: 'colaborador' }, // já concluiu todas as atividades (teste da assinatura)
 ];
-
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // "Anne Carlini de Oliveira" -> "Anne" (usado nas saudações das telas iniciais)

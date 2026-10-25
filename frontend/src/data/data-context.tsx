@@ -5,18 +5,32 @@ import { useAuth } from '@/context/auth-context';
 import {
   adicionarColaborador,
   adicionarGestor,
+  assinarDocumento as registrarAssinatura,
+  assinarDocumentoGestor as registrarAssinaturaGestor,
+  concluirAtividade as registrarConclusao,
+  enviarFeedback as registrarFeedback,
+  iniciarAtividade as registrarInicio,
+  solicitarAssinatura as registrarSolicitacao,
   type NovoColaborador,
   type NovoGestor,
   type ResultadoDb,
 } from './mutations';
 import {
+  consultarAcompanhamento,
+  consultarAssinaturaGestor,
+  consultarAssinaturas,
+  consultarAtencao,
+  consultarAtividades,
+  consultarDocumentos,
+  consultarEquipe,
   consultarHomeColaborador,
   consultarHomeGestor,
   consultarHomeRH,
+  consultarPainelGestores,
   listarGestores,
 } from './queries';
 import { criarDbInicial } from './seed';
-import type { Db, Pessoa } from './types';
+import type { Db, FiltroJornada, Pessoa, StatusJornada } from './types';
 
 /*
  * PONTE ENTRE AS TELAS E OS DADOS
@@ -32,6 +46,12 @@ type DataContextType = {
   viewer: Pessoa | null; // a pessoa do banco que corresponde ao usuário logado
   cadastrarColaborador: (dados: NovoColaborador) => Resultado;
   cadastrarGestor: (dados: NovoGestor) => Resultado;
+  solicitarAssinatura: (documentoId: string) => Resultado;
+  iniciarAtividade: (atividadeId: string) => Resultado;
+  concluirAtividade: (atividadeId: string) => Resultado;
+  assinarDocumento: (documentoId: string, nome: string) => Resultado;
+  enviarFeedback: (colaboradorId: string, texto: string) => Resultado;
+  assinarDocumentoGestor: (documentoId: string, nome: string) => Resultado;
 };
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -58,6 +78,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       viewer,
       cadastrarColaborador: (dados) => aplicar(adicionarColaborador(db, viewer, dados)),
       cadastrarGestor: (dados) => aplicar(adicionarGestor(db, viewer, dados)),
+      solicitarAssinatura: (documentoId) => aplicar(registrarSolicitacao(db, viewer, documentoId)),
+      iniciarAtividade: (id) => aplicar(registrarInicio(db, viewer, id)),
+      concluirAtividade: (id) => aplicar(registrarConclusao(db, viewer, id)),
+      assinarDocumento: (id, nome) => aplicar(registrarAssinatura(db, viewer, id, nome)),
+      enviarFeedback: (id, texto) => aplicar(registrarFeedback(db, viewer, id, texto)),
+      assinarDocumentoGestor: (id, nome) => aplicar(registrarAssinaturaGestor(db, viewer, id, nome)),
     };
   }, [db, viewer]);
 
@@ -87,6 +113,60 @@ export function useHomeGestor() {
   return useMemo(() => consultarHomeGestor(db, viewer), [db, viewer]);
 }
 
+export function useEquipe(filtro?: StatusJornada) {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarEquipe(db, viewer, filtro), [db, viewer, filtro]);
+}
+
+export function useAtencao() {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarAtencao(db, viewer), [db, viewer]);
+}
+
+export function useAssinaturaGestor(documentoId?: string) {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarAssinaturaGestor(db, viewer, documentoId), [db, viewer, documentoId]);
+}
+
+export function useAcoesGestor() {
+  const { enviarFeedback, assinarDocumentoGestor } = useData();
+  return { enviarFeedback, assinarDocumento: assinarDocumentoGestor };
+}
+
+export function usePainelGestores() {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarPainelGestores(db, viewer), [db, viewer]);
+}
+
+export function useAcompanhamento(filtro?: FiltroJornada) {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarAcompanhamento(db, viewer, filtro), [db, viewer, filtro]);
+}
+
+export function useAssinaturas() {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarAssinaturas(db, viewer), [db, viewer]);
+}
+
+export function useAtividades() {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarAtividades(db, viewer), [db, viewer]);
+}
+
+export function useAcoesAtividade() {
+  const { iniciarAtividade, concluirAtividade } = useData();
+  return { iniciar: iniciarAtividade, concluir: concluirAtividade };
+}
+
+export function useDocumentos() {
+  const { db, viewer } = useData();
+  return useMemo(() => consultarDocumentos(db, viewer), [db, viewer]);
+}
+
+export function useAssinarDocumento() {
+  return useData().assinarDocumento;
+}
+
 export function useGestores() {
   const { db, viewer } = useData();
   return useMemo(() => listarGestores(db, viewer), [db, viewer]);
@@ -95,4 +175,8 @@ export function useGestores() {
 export function useCadastro() {
   const { cadastrarColaborador, cadastrarGestor } = useData();
   return { cadastrarColaborador, cadastrarGestor };
+}
+
+export function useSolicitarAssinatura() {
+  return useData().solicitarAssinatura;
 }

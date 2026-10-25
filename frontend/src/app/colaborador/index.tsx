@@ -1,18 +1,20 @@
+import { useRouter, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
+import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
 import { ProgressBar } from '@/components/progress-bar';
 import { primeiroNomeDe, useAuth } from '@/context/auth-context';
 import { useHomeColaborador } from '@/data/data-context';
-import { formatarData, ROTULO_STATUS_ATIVIDADE } from '@/data/format';
+import { formatarData, STATUS_ATIVIDADE } from '@/data/format';
 
 export default function HomeColaborador() {
   const { user } = useAuth();
+  const router = useRouter();
   const home = useHomeColaborador();
   const primeiroNome = primeiroNomeDe(user?.nome);
-  const percentual = home.total ? Math.round((home.concluidas / home.total) * 100) : 0;
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -34,7 +36,7 @@ export default function HomeColaborador() {
           <Card>
             <Text style={s.cardTitulo}>Seu progresso</Text>
             <View style={{ marginTop: 10 }}>
-              <ProgressBar percent={percentual} />
+              <ProgressBar percent={home.percentual} />
             </View>
             <Text style={s.miudo}>
               {home.concluidas} de {home.total} atividades concluídas
@@ -52,15 +54,25 @@ export default function HomeColaborador() {
                 <View key={a.id} style={s.linha}>
                   <Text style={s.nome}>{a.titulo}</Text>
                   <Text style={s.miudo}>
-                    Prazo: {formatarData(a.prazo)} • {ROTULO_STATUS_ATIVIDADE[a.status]}
+                    Prazo: {formatarData(a.prazo)} • {STATUS_ATIVIDADE[a.status].label}
                   </Text>
                 </View>
               ))
             )}
 
-            <Pressable style={s.botao} onPress={() => {}}>
+            <Pressable style={s.botao} onPress={() => router.push('/colaborador/atividades' as Href)}>
               <Text style={s.botaoTexto}>Continuar jornada</Text>
             </Pressable>
+
+            {/* Documentos: só depois de concluir todas as atividades */}
+            <BotaoComAviso
+              texto="Documentos"
+              icone="file-document-outline"
+              habilitado={home.todasConcluidas}
+              aviso="Só será possível acessar os documentos após a conclusão de todas as atividades."
+              onPress={() => router.push('/colaborador/documentos' as Href)}
+              style={s.botaoDocumentos}
+            />
           </Card>
 
           {/* Feedbacks */}
@@ -101,6 +113,7 @@ const s = StyleSheet.create({
 
   botao: { marginTop: 16, marginHorizontal: 12, height: 38, borderRadius: 6, backgroundColor: '#25626B', alignItems: 'center', justifyContent: 'center' },
   botaoTexto: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  botaoDocumentos: { marginTop: 10, marginHorizontal: 12, alignSelf: 'stretch' },
 
   feedback: { marginTop: 14, marginHorizontal: 8, padding: 12, borderRadius: 6, backgroundColor: '#9DB9BD' },
   feedbackTexto: { fontSize: 11, color: '#111', lineHeight: 15 },

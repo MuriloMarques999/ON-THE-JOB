@@ -1,0 +1,191 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Redirect, useRouter, type Href } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { AppHeader } from '@/components/app-header';
+import { AssinaturaTexto } from '@/components/assinatura-texto';
+import { Card } from '@/components/card';
+import { useAssinarDocumento, useDocumentos } from '@/data/data-context';
+import { formatarData } from '@/data/format';
+
+/*
+ * Orientações e finalização: o colaborador assina digitalmente o termo de conclusão.
+ *   Passo 1: digita o nome completo e toca em "Confirmar assinatura" -> a assinatura aparece no espaço
+ *   Passo 2: toca em "Finalizar assinatura" -> grava e volta para Documentos
+ * "Limpar" apaga a assinatura para refazer.
+ */
+
+export default function AssinarDocumento() {
+  const router = useRouter();
+  const d = useDocumentos();
+  const assinar = useAssinarDocumento();
+
+  const [nome, setNome] = useState('');
+  const [previa, setPrevia] = useState<string | null>(null); // assinatura já desenhada no espaço
+  const [erro, setErro] = useState('');
+
+  // Só assina quem concluiu tudo e ainda não assinou
+  if (!d.liberado || d.assinaturaColaborador || !d.documentoId) {
+    return <Redirect href={'/colaborador/documentos' as Href} />;
+  }
+  const documentoId = d.documentoId;
+
+  function voltar() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/colaborador/documentos' as Href);
+  }
+
+  function limpar() {
+    setPrevia(null);
+    setNome('');
+    setErro('');
+  }
+
+  function alterarNome(texto: string) {
+    setNome(texto);
+    setErro('');
+    if (previa !== null) setPrevia(null); // mudou o nome: precisa confirmar de novo
+  }
+
+  function confirmar() {
+    const limpo = nome.trim().replace(/\s+/g, ' ');
+    if (limpo.split(' ').length < 2) {
+      setErro('Digite seu nome completo para assinar.');
+      return;
+    }
+    setErro('');
+    setPrevia(limpo); // passo 1: mostra a assinatura no espaço
+  }
+
+  function finalizar() {
+    if (previa === null) return;
+    const resultado = assinar(documentoId, previa); // passo 2: grava a assinatura
+    if (!resultado.ok) {
+      setErro(resultado.error);
+      return;
+    }
+    router.replace('/colaborador/documentos' as Href);
+  }
+
+  return (
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <AppHeader perfil="Colaborador" />
+
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
+          <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
+          <Text style={s.voltarTexto}>Voltar</Text>
+        </Pressable>
+
+        <Text style={s.titulo}>Documentos</Text>
+        <Text style={s.subtitulo}>Orientações, materiais e finalização do acompanhamento.</Text>
+
+        <Card style={s.bloco}>
+          <Text style={s.blocoTitulo}>Resumo do acompanhamento</Text>
+          <Text style={[s.linhaInfo, { marginTop: 10 }]}>{d.nome}</Text>
+          <Text style={s.linhaInfo}>{d.cargo}</Text>
+          <Text style={s.linhaInfo}>
+            Período de acompanhamento: {formatarData(d.inicio)} até {formatarData(d.fim)}
+          </Text>
+
+          {/* Atividades realizadas, por semana */}
+          <Text style={s.secaoTitulo}>Atividades realizadas</Text>
+          <View style={s.lista}>
+            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+              {d.semanas.map((sem, i) => (
+                <View key={sem.semana} style={[s.semana, i > 0 && s.semanaDivisor]}>
+                  <Text style={s.semanaTitulo}>
+                    Semana {sem.semana} - {sem.tema}
+                  </Text>
+                  {sem.atividades.map((titulo) => (
+                    <Text key={titulo} style={s.atividade}>
+                      {titulo}
+                    </Text>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Assinatura digital */}
+          <Text style={s.secaoTitulo}>Espaço para assinatura digital</Text>
+          <Text style={s.descricao}>
+            Ao assinar você valida as informações coletadas e atividades concluídas no período.
+          </Text>
+
+          <View style={s.espaco}>{previa !== null && <AssinaturaTexto nome={previa} tamanho={30} />}</View>
+          <View style={s.espacoRodape}>
+            <Text style={s.miudo}>Assinatura capturada</Text>
+            <Pressable style={s.limpar} onPress={limpar} hitSlop={8} accessibilityRole="button">
+              <MaterialCommunityIcons name="eraser" size={11} color="#222" />
+              <Text style={s.miudo}>Limpar</Text>
+            </Pressable>
+          </View>
+
+          <Text style={s.rotulo}>Nome completo</Text>
+          <TextInput
+            style={s.input}
+            value={nome}
+            onChangeText={alterarNome}
+            placeholder={d.nome}
+            placeholderTextColor="#777"
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={confirmar}
+          />
+
+          {!!erro && <Text style={s.erro}>{erro}</Text>}
+          {previa !== null && <Text style={s.dica}>Confira sua assinatura e toque em “Finalizar assinatura”.</Text>}
+
+          <Pressable style={s.botao} onPress={previa === null ? confirmar : finalizar} accessibilityRole="button">
+            <Text style={s.botaoTexto}>{previa === null ? 'Confirmar assinatura' : 'Finalizar assinatura'}</Text>
+            <MaterialCommunityIcons name="square-edit-outline" size={12} color="#fff" />
+          </Pressable>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const TEAL_ESCURO = '#25626B';
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#F0EFF0' },
+  content: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 20, paddingBottom: 48 },
+
+  voltar: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  voltarTexto: { fontSize: 12, color: '#111', textDecorationLine: 'underline' },
+
+  titulo: { marginTop: 16, fontSize: 30, fontWeight: '800', color: '#111', lineHeight: 36 },
+  subtitulo: { marginTop: 6, fontSize: 12, color: '#222' },
+
+  bloco: { marginTop: 20, padding: 18 },
+  blocoTitulo: { fontSize: 16, fontWeight: '800', color: '#111' },
+  linhaInfo: { fontSize: 11, color: '#222', lineHeight: 16 },
+
+  secaoTitulo: { marginTop: 26, fontSize: 16, fontWeight: '800', color: '#111' },
+  descricao: { marginTop: 4, fontSize: 10, color: '#333', lineHeight: 14 },
+
+  lista: { marginTop: 12, height: 136, padding: 10, borderRadius: 8, backgroundColor: '#9DB9BD' },
+  semana: { paddingBottom: 8 },
+  semanaDivisor: { paddingTop: 8, borderTopWidth: 1, borderTopColor: '#D9D9D9' },
+  semanaTitulo: { fontSize: 10, color: '#111', marginBottom: 6 },
+  atividade: { fontSize: 10, color: '#111', lineHeight: 15 },
+
+  espaco: { marginTop: 12, height: 100, borderRadius: 8, backgroundColor: '#9DB9BD', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  espacoRodape: { marginTop: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  miudo: { fontSize: 8, color: '#333' },
+  limpar: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+
+  rotulo: { marginTop: 18, fontSize: 11, fontWeight: '800', color: '#111' },
+  input: { marginTop: 6, height: 30, paddingHorizontal: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: '#333', borderRadius: 6, fontSize: 11, color: '#111' },
+
+  erro: { marginTop: 8, fontSize: 11, color: '#B3261E' },
+  dica: { marginTop: 8, fontSize: 10, color: TEAL_ESCURO },
+
+  botao: { alignSelf: 'center', marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 24, paddingHorizontal: 26, borderRadius: 4, backgroundColor: TEAL_ESCURO },
+  botaoTexto: { fontSize: 10, color: '#fff' },
+});

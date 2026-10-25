@@ -22,7 +22,7 @@ function Routes() {
         <Stack.Screen name="colaborador" />
       </Stack.Protected>
       <Stack.Protected guard={user?.role === 'gestor'}>
-        <Stack.Screen name="gestor/index" />
+        <Stack.Screen name="gestor" />
       </Stack.Protected>
     </Stack>
   );
