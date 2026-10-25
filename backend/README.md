@@ -48,7 +48,7 @@ Pré-requisitos: Node.js e MySQL.
    - **Desenvolvimento:** `node src/scripts/seed-teste.js` cria usuários de teste de todos os perfis (senha fraca, só para uso local).
 5. Suba backend e front juntos, na raiz do projeto:
    ```
-   npm run dev
+   npm run dev 
    ```
    Para subir só o backend, dentro de `backend`: `npm run dev`.
 

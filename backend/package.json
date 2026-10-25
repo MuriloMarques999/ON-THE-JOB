@@ -5,7 +5,9 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js", 
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "criar-rh": "node src/scripts/criar-rh.js",
+    "seed": "node src/scripts/seed-teste.js"
   },
   "keywords": [],
   "author": "",
