@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { AssinaturaTexto } from '@/components/assinatura-texto';
 import { Card } from '@/components/card';
+import { Carregando } from '@/components/carregando';
 import { useAuth } from '@/context/auth-context';
 import { useAcoesGestor, useAssinaturaGestor } from '@/data/data-context';
 import { formatarData } from '@/data/format';
@@ -22,13 +23,14 @@ export default function AssinarDocumentoGestor() {
   const router = useRouter();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const tela = useAssinaturaGestor(id);
+  const { tela, carregando } = useAssinaturaGestor(id);
   const { assinarDocumento } = useAcoesGestor();
 
   const [nome, setNome] = useState('');
   const [previa, setPrevia] = useState<string | null>(null);
   const [erro, setErro] = useState('');
   const [assinado, setAssinado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
   // Se não puder assinar, volta para a lista. Depois de assinar, volta com o card do documento aberto
   // (resultado final) e o aviso de sucesso.
@@ -36,6 +38,7 @@ export default function AssinarDocumentoGestor() {
     pathname: '/gestor/atencao',
     params: assinado ? { item: `${id}-ass`, ok: 'assinado' } : { item: `${id}-ass` },
   } as unknown as Href;
+  if (carregando && !tela) return <Carregando />; // espera a resposta do servidor
   if (!tela) return <Redirect href={destino} />;
   const documentoId = tela.documentoId;
 
@@ -66,9 +69,11 @@ export default function AssinarDocumentoGestor() {
     setPrevia(limpo);
   }
 
-  function finalizar() {
-    if (previa === null) return;
-    const resultado = assinarDocumento(documentoId, previa);
+  async function finalizar() {
+    if (previa === null || enviando) return;
+    setEnviando(true);
+    const resultado = await assinarDocumento(documentoId, previa);
+    setEnviando(false);
     if (!resultado.ok) {
       setErro(resultado.error);
       return;

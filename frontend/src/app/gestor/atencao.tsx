@@ -48,8 +48,8 @@ export default function DocumentosGestor() {
     setAbertos((a) => ({ ...a, [id]: !a[id] }));
   }
 
-  function enviar(c: ItemAtencao) {
-    const resultado = enviarFeedback(c.colaboradorId, textos[c.id] ?? '');
+  async function enviar(c: ItemAtencao) {
+    const resultado = await enviarFeedback(c.colaboradorId, textos[c.id] ?? '');
     if (!resultado.ok) {
       setErros((e) => ({ ...e, [c.id]: resultado.error }));
       return;

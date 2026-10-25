@@ -41,6 +41,7 @@ export default function CadastrarColaborador() {
   const [erros, setErros] = useState<Erros>({});
   const [listaAberta, setListaAberta] = useState(false);
   const [sucesso, setSucesso] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
   function alterar(campo: keyof Form, valor: string) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -53,18 +54,21 @@ export default function CadastrarColaborador() {
     else router.replace('/rh' as Href);
   }
 
-  function cadastrar() {
+  async function cadastrar() {
+    if (enviando) return; // evita enviar duas vezes enquanto espera o servidor
     const e = validar(form);
     setErros(e);
     if (Object.keys(e).length > 0) return;
 
-    const resultado = cadastrarColaborador({
+    setEnviando(true);
+    const resultado = await cadastrarColaborador({
       nome: form.nome,
       email: form.email,
       telefone: form.telefone,
       cargo: form.cargo,
       gestorId: form.gestor,
     });
+    setEnviando(false);
     if (!resultado.ok) {
       setErros({ email: resultado.error });
       return;
@@ -177,7 +181,6 @@ export default function CadastrarColaborador() {
           visible={sucesso}
           titulo="Novo colaborador registrado!"
           mensagem="Esperando validação da conta via e-mail ou WhatsApp."
-          nota="(simulação: ainda não salvo)"
           onClose={() => setSucesso(false)}
         />
       </KeyboardAvoidingView>

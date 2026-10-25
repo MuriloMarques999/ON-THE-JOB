@@ -23,8 +23,9 @@ import { useAuth } from '@/context/auth-context';
  *   /concluir-conta?perfil=gestor&email=joao@empresa.com&token=abc123
  *
  * - `perfil` define o fluxo (colaborador ou gestor).
- * - `email` é o e-mail que o RH cadastrou (SIMULAÇÃO: no backend real o link leva só o `token`,
- *   e é o servidor que descobre o e-mail do convite e compara com o digitado).
+ * - `email` é o e-mail que o RH cadastrou; a tela confere se o digitado é o mesmo.
+ * - `token` é o código do convite. O servidor guarda só o hash dele, confere a validade (7 dias)
+ *   e aceita uma única vez; o link sem `token` é tratado como inválido.
  */
 
 const PERFIS = {
@@ -51,14 +52,16 @@ export default function ConcluirConta() {
 
   const perfilParam = um(params.perfil);
   const emailConvite = um(params.email)?.trim() ?? '';
+  const token = um(params.token)?.trim() ?? '';
   const perfil: PerfilConvite | null = perfilParam === 'colaborador' || perfilParam === 'gestor' ? perfilParam : null;
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erros, setErros] = useState<{ email?: string; senha?: string }>({});
+  const [enviando, setEnviando] = useState(false);
 
-  // Link sem perfil válido ou sem e-mail de convite
-  if (!perfil || !emailConvite) {
+  // Link sem perfil válido, sem e-mail de convite ou sem token
+  if (!perfil || !emailConvite || !token) {
     return (
       <SafeAreaView style={s.safe}>
         <View style={s.container}>
@@ -75,7 +78,9 @@ export default function ConcluirConta() {
 
   const config = PERFIS[perfil];
 
-  function concluir() {
+  async function concluir() {
+    if (enviando) return; // evita enviar duas vezes enquanto espera o servidor
+
     const e: typeof erros = {};
 
     if (!EMAIL_RE.test(email.trim())) e.email = 'Informe um e-mail válido.';
@@ -87,8 +92,10 @@ export default function ConcluirConta() {
     setErros(e);
     if (Object.keys(e).length > 0) return;
 
-    // TODO backend: enviar { token, email, senha } para a API.
-    const resultado = criarConta({ role: perfil!, email, senha });
+    // Envia { email, token, senha } para a API (o servidor confere o convite: validade e uso único)
+    setEnviando(true);
+    const resultado = await criarConta({ email, token, senha });
+    setEnviando(false);
     if (!resultado.ok) {
       setErros({ email: resultado.error });
       return;

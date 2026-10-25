@@ -1,0 +1,25 @@
+{
+  "name": "on-the-job",
+  "version": "1.0.0",
+  "description": "Este projeto visa resolver o processo de \"On The Job\" da empresa Fábrica Fortaleza (M. Dias Branco S.A.), que atualmente é burocrático, manual e pouco rastreável. O objetivo principal é digitalizar e centralizar o processo, permitindo o registro, acompanhamento, validação e assinatura digital das atividades, garantindo agilidade, rastreabilidade e segurança.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n api,app -c blue,green \"npm --prefix backend run dev\" \"npm --prefix frontend run web\"",
+    "instalar": "npm install && npm --prefix backend install && npm --prefix frontend install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MuriloMarques999/ON-THE-JOB.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MuriloMarques999/ON-THE-JOB/issues"
+  },
+  "homepage": "https://github.com/MuriloMarques999/ON-THE-JOB#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}

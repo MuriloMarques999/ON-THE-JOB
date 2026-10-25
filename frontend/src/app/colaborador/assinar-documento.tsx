@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { AssinaturaTexto } from '@/components/assinatura-texto';
 import { Card } from '@/components/card';
+import { Carregando } from '@/components/carregando';
 import { useAssinarDocumento, useDocumentos } from '@/data/data-context';
 import { formatarData } from '@/data/format';
 
@@ -25,6 +26,10 @@ export default function AssinarDocumento() {
   const [nome, setNome] = useState('');
   const [previa, setPrevia] = useState<string | null>(null); // assinatura já desenhada no espaço
   const [erro, setErro] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  // Espera a resposta do servidor antes de decidir se a tela pode abrir
+  if (d.carregando) return <Carregando />;
 
   // Só assina quem concluiu tudo e ainda não assinou
   if (!d.liberado || d.assinaturaColaborador || !d.documentoId) {
@@ -59,9 +64,11 @@ export default function AssinarDocumento() {
     setPrevia(limpo); // passo 1: mostra a assinatura no espaço
   }
 
-  function finalizar() {
-    if (previa === null) return;
-    const resultado = assinar(documentoId, previa); // passo 2: grava a assinatura
+  async function finalizar() {
+    if (previa === null || enviando) return;
+    setEnviando(true);
+    const resultado = await assinar(documentoId, previa); // passo 2: grava a assinatura
+    setEnviando(false);
     if (!resultado.ok) {
       setErro(resultado.error);
       return;

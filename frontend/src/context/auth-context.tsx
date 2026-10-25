@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+
+import { aoExpirar, api, definirToken } from '@/services/api';
 
 export type Role = 'rh' | 'colaborador' | 'gestor';
 
@@ -8,18 +10,12 @@ type LoginResult = { ok: true } | { ok: false; error: string };
 
 type AuthContextType = {
   user: User | null;
-  login: (data: { role: Role; email: string; senha: string }) => LoginResult;
-  criarConta: (data: { role: Exclude<Role, 'rh'>; email: string; senha: string; nome?: string }) => LoginResult;
+  login: (data: { role: Role; email: string; senha: string }) => Promise<LoginResult>;
+  // Conclusão de cadastro pelo link do convite: `token` vem na URL do convite
+  criarConta: (data: { email: string; token: string; senha: string }) => Promise<LoginResult>;
   logout: () => void;
 };
 
-// ⚠️ Usuários de teste (em memória). Troque por chamadas ao backend quando estiver pronto.
-const USERS: (User & { senha: string })[] = [
-  { nome: 'Camila Rocha', email: 'rh@platform.com', senha: '123456', role: 'rh' },
-  { nome: 'Anne Carlini', email: 'colaborador@platform.com', senha: '123456', role: 'colaborador' },
-  { nome: 'João Vitor Nogueira', email: 'gestor@platform.com', senha: '123456', role: 'gestor' },
-  { nome: 'Marina Alves', email: 'marina.alves@platform.com', senha: '123456', role: 'colaborador' }, // já concluiu todas as atividades (teste da assinatura)
-];
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // "Anne Carlini de Oliveira" -> "Anne" (usado nas saudações das telas iniciais)
@@ -30,36 +26,37 @@ export function primeiroNomeDe(nome?: string) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  function login({ role, email, senha }: { role: Role; email: string; senha: string }): LoginResult {
-    const found = USERS.find(
-      (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.senha === senha
-    );
-    if (!found) return { ok: false, error: 'E-mail ou senha incorretos.' };
-    if (found.role !== role)
-      return { ok: false, error: 'Este usuário não tem acesso ao perfil selecionado.' };
-
-    setUser({ nome: found.nome, email: found.email, role: found.role });
-    return { ok: true };
-  }
-
-  // SIMULAÇÃO da conclusão de cadastro: guarda a conta só em memória (some ao recarregar o app).
-  function criarConta({ role, email, senha, nome }: { role: Exclude<Role, 'rh'>; email: string; senha: string; nome?: string }): LoginResult {
-    const emailNorm = email.trim().toLowerCase();
-    if (USERS.some((u) => u.email.toLowerCase() === emailNorm))
-      return { ok: false, error: 'Já existe uma conta com este e-mail.' };
-
-    // Nome completo informado pelo RH no cadastro; se não vier, usa a parte inicial do e-mail.
-    const parte = emailNorm.split('@')[0];
-    const nomeCompleto = nome?.trim() || parte.charAt(0).toUpperCase() + parte.slice(1);
-    USERS.push({ nome: nomeCompleto, email: emailNorm, senha, role });
-    return { ok: true };
-  }
-
-  function logout() {
+  const logout = useCallback(() => {
+    definirToken(null);
     setUser(null);
-  }
+  }, []);
 
-  return <AuthContext.Provider value={{ user, login, criarConta, logout }}>{children}</AuthContext.Provider>;
+  // Sessão expirada (o servidor devolveu 401): volta para o login
+  useEffect(() => {
+    aoExpirar(logout);
+    return () => aoExpirar(null);
+  }, [logout]);
+
+  // POST /auth/login -> { token, usuario: { nome, email, role } }
+  // O bloqueio por 3 senhas erradas (15 min) e as mensagens de erro vêm do servidor.
+  const login = useCallback(async ({ role, email, senha }: { role: Role; email: string; senha: string }): Promise<LoginResult> => {
+    const r = await api.post<{ token: string; usuario: User }>('/auth/login', { role, email: email.trim(), senha });
+    if (!r.ok) return { ok: false, error: r.erro };
+
+    definirToken(r.dados.token);
+    setUser(r.dados.usuario);
+    return { ok: true };
+  }, []);
+
+  // POST /auth/concluir-conta: define a senha e ativa a conta (o convite vale 7 dias e é de uso único)
+  const criarConta = useCallback(async ({ email, token, senha }: { email: string; token: string; senha: string }): Promise<LoginResult> => {
+    const r = await api.post('/auth/concluir-conta', { email: email.trim(), token, senha });
+    return r.ok ? { ok: true } : { ok: false, error: r.erro };
+  }, []);
+
+  const value = useMemo(() => ({ user, login, criarConta, logout }), [user, login, criarConta, logout]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

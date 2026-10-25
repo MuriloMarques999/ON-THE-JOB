@@ -38,6 +38,7 @@ export default function CadastrarGestor() {
   const [form, setForm] = useState<Form>(VAZIO);
   const [erros, setErros] = useState<Erros>({});
   const [sucesso, setSucesso] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
   function alterar(campo: keyof Form, valor: string) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -50,12 +51,15 @@ export default function CadastrarGestor() {
     else router.replace('/rh' as Href);
   }
 
-  function cadastrar() {
+  async function cadastrar() {
+    if (enviando) return; // evita enviar duas vezes enquanto espera o servidor
     const e = validar(form);
     setErros(e);
     if (Object.keys(e).length > 0) return;
 
-    const resultado = cadastrarGestor(form);
+    setEnviando(true);
+    const resultado = await cadastrarGestor(form);
+    setEnviando(false);
     if (!resultado.ok) {
       setErros({ email: resultado.error });
       return;
@@ -79,6 +83,7 @@ export default function CadastrarGestor() {
           <Text style={s.titulo}>Cadastrar gestor</Text>
           <Text style={s.subtitulo}>
             Ao salvar, o sistema cria a jornada de 30 dias de onboarding e notifica o colaborador e gestor relacionado.
+            ---------Ao salvar, o sistema gera o convite para o gestor concluir o cadastro e criar a senha.
           </Text>
 
           <View style={s.form}>
@@ -139,7 +144,6 @@ export default function CadastrarGestor() {
           visible={sucesso}
           titulo="Novo gestor registrado!"
           mensagem="Esperando validação da conta via e-mail ou WhatsApp."
-          nota="(simulação: ainda não salvo)"
           onClose={() => setSucesso(false)}
         />
       </KeyboardAvoidingView>

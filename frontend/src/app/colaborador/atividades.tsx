@@ -43,8 +43,8 @@ export default function Atividades() {
     else router.replace('/colaborador' as Href);
   }
 
-  function agir(acao: (id: string) => { ok: true } | { ok: false; error: string }, id: string) {
-    const resultado = acao(id);
+  async function agir(acao: (id: string) => Promise<{ ok: true } | { ok: false; error: string }>, id: string) {
+    const resultado = await acao(id);
     setErro(resultado.ok ? '' : resultado.error);
   }
 

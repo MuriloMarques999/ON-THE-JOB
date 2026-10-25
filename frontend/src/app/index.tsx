@@ -32,6 +32,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
+  const [entrando, setEntrando] = useState(false);
 
   // Vindo da conclusão de cadastro: mostra "Conta criada com sucesso!"
   const [avisoConta, setAvisoConta] = useState(params.conta === 'criada');
@@ -47,9 +48,15 @@ export default function LoginScreen() {
   // Já logado? vai direto para a área do perfil.
     if (user) return <Redirect href={`/${user.role}` as Href} />;
 
-  function entrar() {
-    const result = login({ role: perfil, email, senha });
-    if (!result.ok) setErro(result.error);
+  async function entrar() {
+    if (entrando) return; // evita enviar duas vezes enquanto espera o servidor
+    setErro('');
+    setEntrando(true);
+  const result = await login({ role: perfil, email, senha });
+    if (!result.ok) {
+      setErro(result.error);
+      setEntrando(false);
+    }
     // Sucesso: o estado `user` muda e o <Redirect> acima leva para a área do perfil.
   }
 

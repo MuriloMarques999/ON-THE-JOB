@@ -37,8 +37,8 @@ export default function AssinaturaDocumentos() {
     else router.replace('/rh' as Href);
   }
 
-  function solicitar(item: ItemAssinatura) {
-    const resultado = solicitarAssinatura(item.id);
+  async function solicitar(item: ItemAssinatura) {
+    const resultado = await solicitarAssinatura(item.id);
     if (!resultado.ok) {
       setErro(resultado.error);
       return;
