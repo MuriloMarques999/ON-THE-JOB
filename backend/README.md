@@ -44,11 +44,13 @@ Pré-requisitos: Node.js e MySQL.
    npm run install
    ```
 4. Crie o primeiro usuário de RH, dentro da pasta `backend`:
-   - **Produção/AWS:** `node src/scripts/criar-rh.js` (pergunta nome, e-mail e senha).
-   - **Desenvolvimento:** `node src/scripts/seed-teste.js` cria usuários de teste de todos os perfis (senha fraca, só para uso local).
+   - **Produção/AWS:** `npm run criar-rh`. O script pergunta nome, e-mail e senha (que não aparece enquanto você digita) e cria um RH real com senha forte.
+   - **Desenvolvimento:** `npm run seed` cria usuários de teste de todos os perfis (senha fraca, só para uso local; **nunca use em produção**).
+
+   Também funcionam a partir da raiz do projeto: `npm --prefix backend run criar-rh` e `npm --prefix backend run seed`.
 5. Suba backend e front juntos, na raiz do projeto:
    ```
-   npm run dev
+   npm run dev 
    ```
    Para subir só o backend, dentro de `backend`: `npm run dev`.
 
