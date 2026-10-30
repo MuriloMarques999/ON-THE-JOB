@@ -16,7 +16,8 @@ import type { StatusAtividade } from '@/data/types';
  * Atividades do colaborador, separadas por semana.
  * O status é calculado pelo sistema (prazo + ações). O colaborador só pode Iniciar e Concluir
  * (a conclusão é definitiva). O dropdown de status serve apenas como FILTRO.
- * No fim, o card "Assinatura digital" libera os documentos quando TODAS as atividades estão concluídas.
+ * No fim, o card "Assinatura digital" informa se o termo de conclusão já pode ser assinado
+ * (quando TODAS as atividades estão concluídas). O botão "Documentos" abre a qualquer momento.
  */
 
 const STATUS_ORDEM: StatusAtividade[] = ['concluida', 'em_andamento', 'pendente', 'atrasada'];
@@ -118,7 +119,7 @@ export default function Atividades() {
           );
         })}
 
-        {/* Assinatura digital: libera os documentos quando TODAS as atividades estão concluídas */}
+        {/* Assinatura digital: o termo só fica apto quando TODAS as atividades estão concluídas */}
         <Card style={s.assinatura}>
           <Text style={s.assinaturaTitulo}>Assinatura digital</Text>
           <Text style={s.assinaturaTexto}>
@@ -135,10 +136,10 @@ export default function Atividades() {
             </Text>
           </View>
 
+          {/* Documentos abre a qualquer momento; lá o termo de conclusão só libera com tudo concluído */}
           <BotaoComAviso
             texto="Documentos"
-            habilitado={todasConcluidas}
-            aviso="Só será possível acessar os documentos após a conclusão de todas as atividades."
+            habilitado
             onPress={() => router.push('/colaborador/documentos' as Href)}
           />
         </Card>

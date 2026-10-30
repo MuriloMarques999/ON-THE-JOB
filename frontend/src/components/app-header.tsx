@@ -1,12 +1,14 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/context/auth-context';
 
 // Cabeçalho compartilhado pelas telas internas (menu, logo e perfil).
-// O ícone de menu abre um pequeno menu logo abaixo dele; hoje tem a opção "Sair".
+// O ícone de menu abre um pequeno menu logo abaixo dele: "Termos de uso" (consulta do termo aceito) e "Sair".
 export function AppHeader({ perfil }: { perfil: string }) {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const botao = useRef<View>(null);
   const [aberto, setAberto] = useState(false);
@@ -18,6 +20,11 @@ export function AppHeader({ perfil }: { perfil: string }) {
       setPosicao({ top: y + altura + 6, left: Math.max(8, x - 8) });
       setAberto(true);
     });
+  }
+
+  function verTermos() {
+    setAberto(false);
+    router.push('/termos' as Href);
   }
 
   function sair() {
@@ -54,6 +61,11 @@ export function AppHeader({ perfil }: { perfil: string }) {
                 </Text>
               </View>
             )}
+
+            <Pressable style={s.opcao} onPress={verTermos} accessibilityRole="button">
+              <MaterialCommunityIcons name="shield-check-outline" size={18} color="#25626B" />
+              <Text style={[s.opcaoTexto, { color: '#25626B' }]}>Termos de uso</Text>
+            </Pressable>
 
             <Pressable style={s.opcao} onPress={sair} accessibilityRole="button">
               <MaterialCommunityIcons name="logout" size={18} color="#8A2B2B" />

@@ -38,6 +38,9 @@ export default function AssinarDocumentoGestor() {
     pathname: '/gestor/atencao',
     params: assinado ? { item: `${id}-ass`, ok: 'assinado' } : { item: `${id}-ass` },
   } as unknown as Href;
+  // Assinou: volta direto. Não dá para esperar `tela` virar null, porque a consulta mantém o dado
+  // anterior quando o servidor passa a responder 404 (documento já assinado).
+  if (assinado) return <Redirect href={destino} />;
   if (carregando && !tela) return <Carregando />; // espera a resposta do servidor
   if (!tela) return <Redirect href={destino} />;
   const documentoId = tela.documentoId;

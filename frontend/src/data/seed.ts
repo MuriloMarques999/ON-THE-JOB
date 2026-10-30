@@ -38,6 +38,7 @@ export function criarDbInicial(hoje: string = hojeISO()): Db {
   const lucas = dia(0); // entrou hoje: jornada ainda pendente
   const paula = dia(45);
   const diego = dia(40);
+  const pedro = dia(40);
 
   const pessoas: Pessoa[] = [
     { id: 'rh-1', nome: 'Camila Rocha', email: 'rh@platform.com', perfil: 'rh', cargo: 'Analista de RH' },
@@ -51,6 +52,7 @@ export function criarDbInicial(hoje: string = hojeISO()): Db {
     { id: 'c-6', nome: 'Marina Alves', email: 'marina.alves@platform.com', perfil: 'colaborador', cargo: 'Analista de Dados', gestorId: 'g-1', dataInicio: marina },
     { id: 'c-7', nome: 'Lucas Ferreira', email: 'lucas.ferreira@platform.com', perfil: 'colaborador', cargo: 'Analista de Suporte', gestorId: 'g-1', dataInicio: lucas },
     { id: 'c-9', nome: 'Diego Martins', email: 'diego.martins@platform.com', perfil: 'colaborador', cargo: 'Analista de Qualidade', gestorId: 'g-1', dataInicio: diego },
+    { id: 'c-10', nome: 'Pedro Almeida', email: 'pedro.almeida@platform.com', perfil: 'colaborador', cargo: 'Analista de Processos', gestorId: 'g-1', dataInicio: pedro },
     { id: 'c-8', nome: 'Paula Nunes', email: 'paula.nunes@platform.com', perfil: 'colaborador', cargo: 'Analista Financeiro', gestorId: 'g-1', dataInicio: paula },
 
     // Equipe do Carlos (o João não enxerga estas pessoas)
@@ -78,6 +80,8 @@ export function criarDbInicial(hoje: string = hojeISO()): Db {
       ...criarAtividades('c-8', paula, historico(hoje, { concluidas: 25 })),
       // Diego: concluiu tudo e já assinou o termo; falta a assinatura do gestor
       ...criarAtividades('c-9', diego, historico(hoje, { concluidas: 25 })),
+      // Pedro: falta só a última atividade; ao concluí-la, o próximo passo é assinar o termo
+      ...criarAtividades('c-10', pedro, historico(hoje, { concluidas: 24, comAtraso: [6, 15] })),
       // Julia: fez só 2 e deixou vencer as seguintes (atrasada)
       ...criarAtividades('c-5', julia, historico(hoje, { concluidas: 2 })),
     ],
@@ -93,6 +97,7 @@ export function criarDbInicial(hoje: string = hojeISO()): Db {
       ...criarDocumentos('c-8', paula, [somarDias(paula, 36), somarDias(paula, 37)]),
       ...criarDocumentos('c-9', diego, [somarDias(diego, 36), undefined]), // falta o gestor assinar
       ...criarDocumentos('c-5', julia),
+      ...criarDocumentos('c-10', pedro),
     ],
 
     // Documentos institucionais para download (no backend: arquivos em um bucket)
@@ -104,6 +109,20 @@ export function criarDbInicial(hoje: string = hojeISO()): Db {
     ],
 
     feedbacks: [
+      {
+        id: 'f-4',
+        colaboradorId: 'c-10',
+        gestorId: 'g-1',
+        texto: 'Mapeou os processos da área com muita autonomia e trouxe boas sugestões de melhoria.',
+        data: dia(15),
+      },
+      {
+        id: 'f-5',
+        colaboradorId: 'c-10',
+        gestorId: 'g-1',
+        texto: 'Excelente apresentação de progresso. Seguir com o plano de desenvolvimento combinado.',
+        data: dia(6),
+      },
       {
         id: 'f-1',
         colaboradorId: 'c-1',

@@ -64,12 +64,11 @@ export default function HomeColaborador() {
               <Text style={s.botaoTexto}>Continuar jornada</Text>
             </Pressable>
 
-            {/* Documentos: só depois de concluir todas as atividades */}
+            {/* Documentos: abre a qualquer momento (o termo de conclusão só libera no fim da jornada) */}
             <BotaoComAviso
               texto="Documentos"
               icone="file-document-outline"
-              habilitado={home.todasConcluidas}
-              aviso="Só será possível acessar os documentos após a conclusão de todas as atividades."
+              habilitado
               onPress={() => router.push('/colaborador/documentos' as Href)}
               style={s.botaoDocumentos}
             />

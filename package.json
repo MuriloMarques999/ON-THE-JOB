@@ -4,6 +4,7 @@
   "description": "Este projeto visa resolver o processo de \"On The Job\" da empresa Fábrica Fortaleza (M. Dias Branco S.A.), que atualmente é burocrático, manual e pouco rastreável. O objetivo principal é digitalizar e centralizar o processo, permitindo o registro, acompanhamento, validação e assinatura digital das atividades, garantindo agilidade, rastreabilidade e segurança.",
   "main": "index.js",
   "scripts": {
+    "mock": "npm --prefix frontend run mock",
     "dev": "concurrently -n api,app -c blue,green \"npm --prefix backend run dev\" \"npm --prefix frontend run web\"",
     "instalar": "npm install && npm --prefix backend install && npm --prefix frontend install"
   },

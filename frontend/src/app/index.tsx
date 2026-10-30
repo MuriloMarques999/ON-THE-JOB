@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/brand-header';
+import { PainelTeste } from '@/components/painel-teste';
 import { SuccessBanner } from '@/components/success-banner';
 import { useAuth, type Role } from '@/context/auth-context';
 
@@ -24,7 +25,7 @@ const PERFIS: { id: Role; label: string; icon: keyof typeof MaterialCommunityIco
 ];
 
 export default function LoginScreen() {
-  const { user, login } = useAuth();
+  const { user, login, avisoLogin } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ conta?: string; perfil?: string }>();
   const perfilInicial: Role = params.perfil === 'colaborador' || params.perfil === 'gestor' ? params.perfil : 'rh';
@@ -45,8 +46,8 @@ export default function LoginScreen() {
     router.setParams({ conta: '' });
   }
 
-  // Já logado? vai direto para a área do perfil.
-    if (user) return <Redirect href={`/${user.role}` as Href} />;
+  // Já logado? vai para a área do perfil (ou, no primeiro acesso, para o aceite dos termos).
+  if (user) return <Redirect href={(user.termosAceitos ? `/${user.role}` : '/termos') as Href} />;
 
   async function entrar() {
     if (entrando) return; // evita enviar duas vezes enquanto espera o servidor
@@ -73,6 +74,9 @@ export default function LoginScreen() {
             <Text style={styles.title}>Entrar na plataforma</Text>
             <Text style={styles.subtitle}>Selecione um perfil para acesso.</Text>
           </View>
+
+          {/* Depois de recusar os termos: explica por que voltou ao login */}
+          {!!avisoLogin && <Text style={styles.aviso}>{avisoLogin}</Text>}
 
           {/* Perfis */}
           <View style={styles.perfis} accessibilityRole="radiogroup">
@@ -130,6 +134,8 @@ export default function LoginScreen() {
           <Pressable style={styles.entrar} onPress={entrar}>
             <Text style={styles.entrarText}>Entrar</Text>
           </Pressable>
+
+          <PainelTeste />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -163,6 +169,8 @@ const styles = StyleSheet.create({
 
   label: { marginTop: 44, marginBottom: 6, fontSize: 12, fontWeight: '800', color: '#111' },
   input: { height: 40, paddingHorizontal: 10, borderRadius: 6, backgroundColor: SUPERFICIE, fontSize: 13, color: '#111' },
+
+  aviso: { marginTop: 20, padding: 10, borderRadius: 6, backgroundColor: '#FCEFD9', color: '#6B4A12', fontSize: 12, textAlign: 'center', lineHeight: 17 },
 
   erro: { marginTop: 14, textAlign: 'center', color: '#B3261E', fontSize: 13 },
 

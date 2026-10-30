@@ -15,7 +15,8 @@ const dia = (v) => (v ? String(v).slice(0, 10) : undefined);
 // Quem está logado (pelo token) -> o colaborador e o onboarding dele
 async function carregarColaborador(idUsuario) {
   const [rows] = await db.query(
-    `SELECT c.id_colaborador, c.id_gestor, u.nome, u.cargo, o.id_onboarding, o.data_inicio
+    `SELECT c.id_colaborador, c.id_gestor, u.nome, u.cargo, u.termos_aceitos_em, u.termos_versao,
+            o.id_onboarding, o.data_inicio
        FROM colaborador c
        JOIN usuario u ON u.id_usuario = c.id_usuario
        JOIN onboarding o ON o.id_colaborador = c.id_colaborador
@@ -175,6 +176,10 @@ async function documentos(req, res) {
         : undefined,
       semanas: R.resumoSemanas(atividades),
       biblioteca: [...R.BIBLIOTECA, ...formulario],
+      // Termos de uso / LGPD aceitos no primeiro acesso (sempre visíveis, mesmo antes de liberar)
+      termos: colab.termos_aceitos_em
+        ? { versao: colab.termos_versao, aceitoEm: dia(colab.termos_aceitos_em) }
+        : undefined,
     });
   } catch (e) {
     return erroInterno(res, e);

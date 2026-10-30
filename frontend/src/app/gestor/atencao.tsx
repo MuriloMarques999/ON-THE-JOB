@@ -9,9 +9,11 @@ import { AssinaturaTexto } from '@/components/assinatura-texto';
 import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
 import { SuccessBanner } from '@/components/success-banner';
-import { useAcoesGestor, useAtencao } from '@/data/data-context';
+import { useAcoesGestor, useAtencao, useConclusaoGestor } from '@/data/data-context';
 import { formatarData } from '@/data/format';
 import type { ItemAtencao } from '@/data/queries';
+import { abrirPdf } from '@/services/pdf/abrir-pdf';
+import { documentoConclusao } from '@/services/pdf/conclusao';
 
 /*
  * "Documentos" do gestor: tudo o que precisa da atenção dele e o histórico do que já foi feito.
@@ -206,9 +208,36 @@ function Cartao({
               <BotaoComAviso compacto texto="Assinar" icone="square-edit-outline" habilitado onPress={onAssinar ?? (() => {})} />
             )}
           </View>
+
+          {/* Assinado pelos dois: o mesmo PDF que o colaborador abre na tela de Documentos dele */}
+          {c.concluido && c.documentoId && <FormularioAssinado documentoId={c.documentoId} />}
         </View>
       )}
     </Card>
+  );
+}
+
+// "Formulário On The Job" (termo de conclusão com as duas assinaturas), igual à biblioteca do colaborador.
+// Os dados só são buscados quando o cartão está aberto.
+function FormularioAssinado({ documentoId }: { documentoId: string }) {
+  const dados = useConclusaoGestor(documentoId);
+
+  return (
+    <View style={s.docLinha}>
+      <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
+      <View style={{ flex: 1 }}>
+        <Text style={s.docNome}>Formulário On The Job</Text>
+        <Text style={s.docSub}>Institucional • PDF</Text>
+      </View>
+      <Pressable
+        onPress={() => dados && abrirPdf(documentoConclusao(dados))}
+        disabled={!dados}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Abrir Formulário On The Job">
+        <Text style={[s.abrir, !dados && { color: '#888' }]}>{dados ? 'Abrir' : 'Carregando...'}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -248,4 +277,9 @@ const s = StyleSheet.create({
   documento: { fontSize: 10, fontWeight: '700', color: '#111' },
   caixaAss: { minHeight: 62, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: '#333', borderRadius: 8 },
   caixaRotulo: { fontSize: 10, color: '#222' },
+
+  docLinha: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+  docNome: { fontSize: 11, color: '#111' },
+  docSub: { marginTop: 1, fontSize: 8, color: '#555' },
+  abrir: { fontSize: 9, color: '#222' },
 });

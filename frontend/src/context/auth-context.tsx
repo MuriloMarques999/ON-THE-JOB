@@ -4,7 +4,8 @@ import { aoExpirar, api, definirToken } from '@/services/api';
 
 export type Role = 'rh' | 'colaborador' | 'gestor';
 
-export type User = { nome: string; email: string; role: Role };
+// `termosAceitos`: aceitou a versão atual dos termos de uso / LGPD. Sem isso, só a tela /termos abre.
+export type User = { nome: string; email: string; role: Role; termosAceitos: boolean; termosAceitosEm: string | null };
 
 type LoginResult = { ok: true } | { ok: false; error: string };
 
@@ -13,6 +14,10 @@ type AuthContextType = {
   login: (data: { role: Role; email: string; senha: string }) => Promise<LoginResult>;
   // Conclusão de cadastro pelo link do convite: `token` vem na URL do convite
   criarConta: (data: { email: string; token: string; senha: string }) => Promise<LoginResult>;
+  aceitarTermos: () => Promise<LoginResult>;
+  // Recusar os termos encerra a sessão (sem bloquear a conta): no próximo login, os termos aparecem de novo
+  recusarTermos: () => void;
+  avisoLogin: string; // mensagem mostrada na tela de login (ex.: depois de recusar os termos)
   logout: () => void;
 };
 
@@ -25,11 +30,17 @@ export function primeiroNomeDe(nome?: string) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [avisoLogin, setAvisoLogin] = useState('');
 
   const logout = useCallback(() => {
     definirToken(null);
     setUser(null);
   }, []);
+
+  const recusarTermos = useCallback(() => {
+    setAvisoLogin('Para acessar a plataforma, é preciso aceitar os Termos de Uso e a Política de Privacidade.');
+    logout();
+  }, [logout]);
 
   // Sessão expirada (o servidor devolveu 401): volta para o login
   useEffect(() => {
@@ -44,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!r.ok) return { ok: false, error: r.erro };
 
     definirToken(r.dados.token);
+    setAvisoLogin('');
     setUser(r.dados.usuario);
     return { ok: true };
   }, []);
@@ -54,7 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return r.ok ? { ok: true } : { ok: false, error: r.erro };
   }, []);
 
-  const value = useMemo(() => ({ user, login, criarConta, logout }), [user, login, criarConta, logout]);
+  // POST /auth/aceitar-termos -> novo { token, usuario }: o token novo libera as demais rotas
+  const aceitarTermos = useCallback(async (): Promise<LoginResult> => {
+    const r = await api.post<{ token: string; usuario: User }>('/auth/aceitar-termos', { aceito: true });
+    if (!r.ok) return { ok: false, error: r.erro };
+
+    definirToken(r.dados.token);
+    setUser(r.dados.usuario);
+    return { ok: true };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, login, criarConta, aceitarTermos, recusarTermos, avisoLogin, logout }),
+    [user, login, criarConta, aceitarTermos, recusarTermos, avisoLogin, logout]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

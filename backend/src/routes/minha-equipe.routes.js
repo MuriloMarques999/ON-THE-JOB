@@ -9,6 +9,7 @@ router.get('/equipe', c.equipe);
 router.get('/atencao', c.atencao);
 router.get('/documentos/:id/assinatura', c.telaAssinatura);
 router.post('/documentos/:id/assinar', c.assinar);
+router.get('/documentos/:id/conclusao', c.conclusao);
 router.post('/colaboradores/:id/feedbacks', c.enviarFeedback);
 
 module.exports = router;

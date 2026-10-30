@@ -5,6 +5,7 @@ import { DataProvider } from '@/data/data-context';
 
 function Routes() {
   const { user } = useAuth();
+  const liberado = !!user?.termosAceitos;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -14,15 +15,22 @@ function Routes() {
         <Stack.Screen name="concluir-conta" />
       </Stack.Protected>
 
-      {/* Cada área só abre para o perfil correspondente */}
-      <Stack.Protected guard={user?.role === 'rh'}>
+      {/* Cada área só abre para o perfil correspondente, e só depois do aceite dos termos */}
+      <Stack.Protected guard={liberado && user?.role === 'rh'}>
         <Stack.Screen name="rh" />
       </Stack.Protected>
-      <Stack.Protected guard={user?.role === 'colaborador'}>
+      <Stack.Protected guard={liberado && user?.role === 'colaborador'}>
         <Stack.Screen name="colaborador" />
       </Stack.Protected>
-      <Stack.Protected guard={user?.role === 'gestor'}>
+      <Stack.Protected guard={liberado && user?.role === 'gestor'}>
         <Stack.Screen name="gestor" />
+      </Stack.Protected>
+
+      {/* Termos de uso / LGPD: obrigatório no primeiro acesso; depois, só para consulta (menu e Documentos).
+          ATENÇÃO: precisa ficar DEPOIS das áreas. Ao logar, o Expo Router abre a primeira tela liberada
+          desta lista; se os termos viessem antes, abririam em todo login, mesmo para quem já aceitou. */}
+      <Stack.Protected guard={!!user}>
+        <Stack.Screen name="termos" />
       </Stack.Protected>
     </Stack>
   );

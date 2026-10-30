@@ -18,6 +18,8 @@ import type {
   ItemAcompanhamento,
   PainelGestores,
 } from './queries';
+import type { DadosConclusao } from '@/services/pdf/conclusao';
+
 import type { FiltroJornada, StatusJornada } from './types';
 
 /*
@@ -201,6 +203,13 @@ export function useAssinaturaGestor(documentoId?: string) {
   const caminho = documentoId ? `/minha-equipe/documentos/${encodeURIComponent(documentoId)}/assinatura` : null;
   const { dados, carregando } = useConsulta<AssinaturaGestorTela>(caminho);
   return { tela: dados, carregando };
+}
+
+// Termo de conclusão (PDF) de um colaborador da equipe, depois das duas assinaturas.
+// Só busca quando recebe o `documentoId` (o cartão do documento está aberto).
+export function useConclusaoGestor(documentoId?: string) {
+  const caminho = documentoId ? `/minha-equipe/documentos/${encodeURIComponent(documentoId)}/conclusao` : null;
+  return useConsulta<DadosConclusao>(caminho).dados;
 }
 
 /* ------------------------------- ações ------------------------------- */

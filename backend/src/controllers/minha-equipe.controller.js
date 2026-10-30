@@ -93,6 +93,45 @@ const assinar = rota(async (req, res, { gestor, colabs, hoje }) => {
   return res.json({ ok: true });
 });
 
+// GET /minha-equipe/documentos/:id/conclusao
+// Dados do termo de conclusão (PDF) de um colaborador da equipe, só depois das DUAS assinaturas.
+// Mesmo conteúdo que o colaborador vê no "Formulário On The Job" da tela de Documentos dele.
+const conclusao = rota(async (req, res, { colabs, hoje }) => {
+  const c = colabs.find((x) => x.doc && x.doc.id === req.params.id);
+  if (!c || !c.doc.assinadoColaboradorEm || !c.doc.assinadoGestorEm) {
+    return res.status(404).json({ erro: 'Documento assinado não encontrado.' });
+  }
+
+  const [[usuario]] = await db.query(
+    'SELECT u.email FROM colaborador c JOIN usuario u ON u.id_usuario = c.id_usuario WHERE c.id_colaborador = ?',
+    [c.id]
+  );
+  // Todos os feedbacks do colaborador, com o nome de quem enviou (como na home do colaborador)
+  const [fbs] = await db.query(
+    `SELECT f.texto, f.data, u.nome AS autor
+       FROM feedback f
+       JOIN gestor g ON g.id_gestor = f.id_gestor
+       JOIN usuario u ON u.id_usuario = g.id_usuario
+      WHERE f.id_colaborador = ? ORDER BY f.id_feedback DESC`,
+    [c.id]
+  );
+
+  const itens = c.atividades.map((a) => R.paraItem(a, hoje));
+  return res.json({
+    colaborador: { nome: c.nome, cargo: c.cargo, email: usuario?.email ?? '' },
+    inicio: c.dataInicio,
+    fim: c.dataInicio ? R.dataFimJornada(c.dataInicio) : undefined,
+    semanas: R.resumoSemanas(c.atividades).map((s) => ({
+      semana: s.semana,
+      tema: s.tema,
+      atividades: itens.filter((i) => i.semana === s.semana),
+    })),
+    feedbacks: fbs.map((f) => ({ texto: f.texto, data: String(f.data).slice(0, 10), autor: f.autor })),
+    assinaturaColaborador: { nome: c.doc.assinaturaColaborador ?? c.nome, data: c.doc.assinadoColaboradorEm },
+    assinaturaGestor: { nome: c.doc.assinaturaGestor ?? 'Gestor', data: c.doc.assinadoGestorEm },
+  });
+});
+
 // POST /minha-equipe/colaboradores/:id/feedbacks   { texto }
 const enviarFeedback = rota(async (req, res, { gestor, colabs, hoje }) => {
   const c = colabs.find((x) => x.id === req.params.id);
@@ -111,4 +150,4 @@ const enviarFeedback = rota(async (req, res, { gestor, colabs, hoje }) => {
   return res.status(201).json({ ok: true });
 });
 
-module.exports = { home, equipe, atencao, telaAssinatura, assinar, enviarFeedback };
+module.exports = { home, equipe, atencao, telaAssinatura, assinar, conclusao, enviarFeedback };

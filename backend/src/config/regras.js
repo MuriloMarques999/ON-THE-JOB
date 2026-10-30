@@ -40,6 +40,8 @@ function paraItem(a, hoje) {
     envolvidos: a.envolvidos,
     inicio: a.inicio,
     prazo: a.prazo,
+    iniciadaEm: a.iniciadaEm,
+    concluidaEm: a.concluidaEm,
     status: statusAtividade(a, hoje),
     comAtraso: concluidaComAtraso(a),
     podeIniciar: jaPodeIniciar(a, hoje),

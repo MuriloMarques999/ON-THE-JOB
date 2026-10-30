@@ -1,16 +1,27 @@
 const jwt = require('jsonwebtoken');
 
-function autenticar(req, res, next) {
+// Só valida o token. Usado pela rota que registra o aceite dos termos.
+function autenticarSemTermos(req, res, next) {
   const [tipo, token] = (req.headers.authorization || '').split(' ');
   if (tipo !== 'Bearer' || !token) {
     return res.status(401).json({ erro: 'Faça login para continuar.' });
   }
   try {
-    req.usuario = jwt.verify(token, process.env.JWT_SECRET); // { id, role }
+    req.usuario = jwt.verify(token, process.env.JWT_SECRET); // { id, role, termos }
     next();
   } catch {
     return res.status(401).json({ erro: 'Sessão expirada. Faça login novamente.' });
   }
+}
+
+// Valida o token e exige o aceite dos termos de uso / LGPD.
+function autenticar(req, res, next) {
+  autenticarSemTermos(req, res, () => {
+    if (!req.usuario.termos) {
+      return res.status(403).json({ erro: 'Aceite os termos de uso para acessar a plataforma.' });
+    }
+    next();
+  });
 }
 
 function exigeRole(...roles) {
@@ -22,4 +33,4 @@ function exigeRole(...roles) {
   };
 }
 
-module.exports = { autenticar, exigeRole };
+module.exports = { autenticar, autenticarSemTermos, exigeRole };

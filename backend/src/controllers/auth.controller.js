@@ -2,9 +2,31 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../config/db');
+const { VERSAO_TERMOS } = require('../config/termos');
 
 const MAX_TENTATIVAS = 3;
 const BLOQUEIO_MINUTOS = 15;
+
+// Token e dados do usuário devolvidos ao app. `termos` no token diz se ele já aceitou a versão
+// atual dos termos: sem isso, as rotas protegidas recusam o acesso (middlewares/auth.js).
+function sessao(usuario) {
+  const termosAceitos = usuario.termos_versao === VERSAO_TERMOS;
+  const token = jwt.sign(
+    { id: usuario.id_usuario, role: usuario.perfil_acesso, termos: termosAceitos },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+  );
+  return {
+    token,
+    usuario: {
+      nome: usuario.nome,
+      email: usuario.email,
+      role: usuario.perfil_acesso,
+      termosAceitos,
+      termosAceitosEm: termosAceitos ? usuario.termos_aceitos_em : null,
+    },
+  };
+}
 
 async function login(req, res) {
   const { role, email, senha } = req.body;
@@ -16,6 +38,7 @@ async function login(req, res) {
   try {
     const [rows] = await db.query(
       `SELECT id_usuario, nome, email, senha, status, perfil_acesso, tentativas_falhas,
+              termos_aceitos_em, termos_versao,
               (bloqueado_ate IS NOT NULL AND bloqueado_ate > NOW()) AS bloqueado
          FROM usuario
         WHERE email = ?`,
@@ -71,16 +94,7 @@ async function login(req, res) {
       [usuario.id_usuario]
     );
 
-    const token = jwt.sign(
-      { id: usuario.id_usuario, role: usuario.perfil_acesso },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
-    );
-
-    return res.json({
-      token,
-      usuario: { nome: usuario.nome, email: usuario.email, role: usuario.perfil_acesso },
-    });
+    return res.json(sessao(usuario));
   } catch (e) {
     console.error(e);
     return res.status(500).json({ erro: 'Erro interno. Tente novamente.' });
@@ -128,4 +142,30 @@ async function concluirConta(req, res) {
   }
 }
 
-module.exports = { login, concluirConta };
+// POST /auth/aceitar-termos   { aceito: true }
+// Registra o aceite (data e versão) e devolve um novo token, já liberado para as demais rotas.
+async function aceitarTermos(req, res) {
+  if (req.body.aceito !== true) {
+    return res.status(400).json({ erro: 'É preciso aceitar os termos para continuar.' });
+  }
+
+  try {
+    await db.query('UPDATE usuario SET termos_aceitos_em = NOW(), termos_versao = ? WHERE id_usuario = ?', [
+      VERSAO_TERMOS,
+      req.usuario.id,
+    ]);
+    const [rows] = await db.query(
+      `SELECT id_usuario, nome, email, perfil_acesso, termos_aceitos_em, termos_versao
+         FROM usuario WHERE id_usuario = ?`,
+      [req.usuario.id]
+    );
+    if (!rows[0]) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+
+    return res.json(sessao(rows[0]));
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ erro: 'Erro interno. Tente novamente.' });
+  }
+}
+
+module.exports = { login, concluirConta, aceitarTermos };

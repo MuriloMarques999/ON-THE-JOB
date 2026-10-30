@@ -204,6 +204,8 @@ export interface ItemAtividade {
   envolvidos: string;
   inicio: string;
   prazo: string;
+  iniciadaEm?: string;
+  concluidaEm?: string;
   status: StatusAtividade; // calculado
   comAtraso: boolean; // concluída depois do prazo
   podeIniciar: boolean; // a data de início já chegou
@@ -217,6 +219,8 @@ function paraItem(a: Atividade, hoje: string): ItemAtividade {
     envolvidos: a.envolvidos,
     inicio: a.inicio,
     prazo: a.prazo,
+    iniciadaEm: a.iniciadaEm,
+    concluidaEm: a.concluidaEm,
     status: statusAtividade(a, hoje),
     comAtraso: concluidaComAtraso(a),
     podeIniciar: jaPodeIniciar(a, hoje),
@@ -319,6 +323,7 @@ export interface DocumentosColaborador {
   assinaturaGestor?: { nome: string; data: string };
   semanas: { semana: number; tema: string; atividades: string[] }[]; // atividades realizadas, por semana
   biblioteca: ItemBiblioteca[];
+  termos?: { versao: string; aceitoEm: string }; // termos de uso / LGPD aceitos no primeiro acesso
 }
 
 const DOCUMENTOS_VAZIO: DocumentosColaborador = {

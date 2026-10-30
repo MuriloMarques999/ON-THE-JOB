@@ -19,7 +19,9 @@ CREATE TABLE usuario (
   token_convite      VARCHAR(255) NULL,                          -- só o hash (SHA-256) do convite
   convite_expira_em  DATETIME     NULL,
   tentativas_falhas  INT          NOT NULL DEFAULT 0,
-  bloqueado_ate      DATETIME     NULL
+  bloqueado_ate      DATETIME     NULL,
+  termos_aceitos_em  DATETIME     NULL,                          -- aceite dos termos de uso / LGPD
+  termos_versao      VARCHAR(10)  NULL                           -- versão aceita (nova versão pede novo aceite)
 );
 
 CREATE TABLE gestor (

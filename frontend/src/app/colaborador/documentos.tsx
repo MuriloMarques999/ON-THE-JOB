@@ -9,12 +9,18 @@ import { AssinaturaTexto } from '@/components/assinatura-texto';
 import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
 import { SuccessBanner } from '@/components/success-banner';
-import { useDocumentos } from '@/data/data-context';
+import { useAuth } from '@/context/auth-context';
+import { useAtividades, useDocumentos, useHomeColaborador } from '@/data/data-context';
 import { formatarData } from '@/data/format';
+import { abrirPdf } from '@/services/pdf/abrir-pdf';
+import { documentoConclusao } from '@/services/pdf/conclusao';
+import { documentoTermos } from '@/services/pdf/termos';
 
 /*
- * Documentos do colaborador: resumo do acompanhamento, assinaturas e biblioteca.
- * Só abre depois que TODAS as atividades foram concluídas.
+ * Documentos do colaborador: termos aceitos, termo de conclusão (resumo e assinaturas) e biblioteca.
+ * A tela abre a qualquer momento da jornada. O termo de conclusão só é liberado depois que TODAS as
+ * atividades foram concluídas, e o "Formulário On The Job" (já com as assinaturas do colaborador e
+ * do gestor) só entra na biblioteca depois que os dois assinaram (regra do servidor).
  * Ordem das assinaturas: colaborador primeiro; depois o gestor (que assina na área dele).
  */
 
@@ -23,6 +29,9 @@ const dois = (n: number) => String(n).padStart(2, '0');
 export default function Documentos() {
   const router = useRouter();
   const d = useDocumentos();
+  const { user } = useAuth();
+  const { semanas: semanasAtividades } = useAtividades();
+  const { feedbacks } = useHomeColaborador();
   const [aberto, setAberto] = useState<string | null>(null);
 
   function voltar() {
@@ -31,6 +40,33 @@ export default function Documentos() {
   }
 
   const assinou = !!d.assinaturaColaborador;
+
+  // PDF dos termos aceitos, com o registro do aceite (nova aba no navegador; visualizador no celular)
+  function abrirTermos() {
+    if (!user || !d.termos) return;
+    abrirPdf(documentoTermos({ nome: user.nome, email: user.email, perfil: user.role, aceitoEm: d.termos.aceitoEm, versao: d.termos.versao }));
+  }
+
+  // Termo de conclusão do onboarding: todas as atividades em detalhe + as duas assinaturas.
+  // Só existe depois que colaborador e gestor assinaram.
+  function abrirConclusao() {
+    if (!user || !d.assinaturaColaborador || !d.assinaturaGestor) return;
+    abrirPdf(
+      documentoConclusao({
+        colaborador: { nome: d.nome, cargo: d.cargo, email: user.email },
+        inicio: d.inicio,
+        fim: d.fim,
+        semanas: semanasAtividades.map((sem) => ({
+          semana: sem.semana,
+          tema: d.semanas.find((x) => x.semana === sem.semana)?.tema ?? '',
+          atividades: sem.atividades,
+        })),
+        feedbacks,
+        assinaturaColaborador: d.assinaturaColaborador,
+        assinaturaGestor: d.assinaturaGestor,
+      })
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -46,10 +82,36 @@ export default function Documentos() {
           <Text style={s.titulo}>Documentos</Text>
           <Text style={s.subtitulo}>Orientações, materiais e finalização do acompanhamento.</Text>
 
+          {/* Termos de uso / LGPD aceitos no primeiro acesso: disponíveis desde o início */}
+          {!!d.termos && (
+            <Card style={s.bloco}>
+              <Text style={s.blocoTitulo}>Termos aceitos</Text>
+              <View style={[s.docLinha, { marginTop: 10 }]}>
+                <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.docNome}>Termos de Uso e Política de Privacidade (LGPD)</Text>
+                  <Text style={s.docSub}>
+                    LGPD • PDF • aceito em {formatarData(d.termos.aceitoEm)} • versão {d.termos.versao}
+                  </Text>
+                </View>
+                <Pressable onPress={abrirTermos} hitSlop={8} accessibilityRole="button" accessibilityLabel="Abrir PDF dos termos">
+                  <Text style={s.abrir}>Abrir</Text>
+                </Pressable>
+              </View>
+            </Card>
+          )}
+
+          {/* Termo de conclusão: resumo e assinaturas só depois de concluir todas as atividades */}
           {!d.liberado ? (
             <Card style={s.bloco}>
-              <Text style={s.blocoTitulo}>Documentos indisponíveis</Text>
-              <Text style={s.linhaInfo}>Você poderá acessar os documentos depois de concluir todas as atividades.</Text>
+              <Text style={s.blocoTitulo}>Termo de conclusão</Text>
+              <Text style={[s.linhaInfo, { marginTop: 6 }]}>
+                O resumo do acompanhamento e as assinaturas do colaborador e do gestor ficam disponíveis após a
+                conclusão de todas as atividades.
+              </Text>
+              <Text style={[s.linhaInfo, { marginTop: 6 }]}>
+                Atividades concluídas: {d.atividadesRealizadas} de {d.total}
+              </Text>
             </Card>
           ) : (
             <>
@@ -105,29 +167,34 @@ export default function Documentos() {
                   )}
                 </View>
               </Card>
-
-              {/* Biblioteca de documentos */}
-              <Card style={s.bloco}>
-                <Text style={s.blocoTitulo}>Biblioteca de documentos</Text>
-                <View style={{ marginTop: 14 }}>
-                  {d.biblioteca.map((doc) => (
-                    <View key={doc.id} style={s.docLinha}>
-                      <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
-                      <View style={{ flex: 1 }}>
-                        <Text style={s.docNome}>{doc.titulo}</Text>
-                        <Text style={s.docSub}>
-                          {doc.tipo} • {doc.formato}
-                        </Text>
-                      </View>
-                      <Pressable onPress={() => setAberto(doc.titulo)} hitSlop={8} accessibilityRole="button">
-                        <Text style={s.abrir}>Abrir</Text>
-                      </Pressable>
-                    </View>
-                  ))}
-                </View>
-              </Card>
             </>
           )}
+
+          {/* Biblioteca de documentos: disponível durante toda a jornada */}
+          <Card style={s.bloco}>
+            <Text style={s.blocoTitulo}>Biblioteca de documentos</Text>
+            <View style={{ marginTop: 14 }}>
+              {d.biblioteca.map((doc) => (
+                <View key={doc.id} style={s.docLinha}>
+                  <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.docNome}>{doc.titulo}</Text>
+                    <Text style={s.docSub}>
+                      {doc.tipo} • {doc.formato}
+                    </Text>
+                  </View>
+                  <Pressable
+                    // O formulário (termo de conclusão assinado) é gerado em PDF; os demais ainda são simulados
+                    onPress={() => (doc.id.startsWith('form-') ? abrirConclusao() : setAberto(doc.titulo))}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Abrir ${doc.titulo}`}>
+                    <Text style={s.abrir}>Abrir</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          </Card>
         </ScrollView>
 
         {/* Download simulado: o PDF real virá do backend */}

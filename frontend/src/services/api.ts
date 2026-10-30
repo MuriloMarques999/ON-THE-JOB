@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 
+import { MODO_TESTE, responderMock } from './mock-api';
+
 /*
  * CLIENTE DA API (backend em Node/Express)
  * Todas as chamadas ao servidor passam por aqui. O token de login (JWT) fica guardado em memória
@@ -30,31 +32,39 @@ export function aoExpirar(fn: (() => void) | null) {
   aoExpirarSessao = fn;
 }
 
+async function viaRede(metodo: 'GET' | 'POST', caminho: string, corpo?: unknown) {
+  const resposta = await fetch(`${API_URL}${caminho}`, {
+    method: metodo,
+    headers: {
+      ...(corpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
+  });
+
+  let json: unknown = null;
+  try {
+    json = await resposta.json();
+  } catch {
+    // resposta sem corpo
+  }
+  return { status: resposta.status, json };
+}
+
 async function chamar<T>(metodo: 'GET' | 'POST', caminho: string, corpo?: unknown): Promise<RespostaApi<T>> {
   try {
-    const resposta = await fetch(`${API_URL}${caminho}`, {
-      method: metodo,
-      headers: {
-        ...(corpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
-    });
+    // Modo de teste (npm run mock): quem responde é o services/mock-api.ts, sem backend
+    const { status, json } = MODO_TESTE
+      ? await responderMock(metodo, caminho, corpo, token)
+      : await viaRede(metodo, caminho, corpo);
 
-    let json: unknown = null;
-    try {
-      json = await resposta.json();
-    } catch {
-      // resposta sem corpo
-    }
-
-    if (resposta.ok) return { ok: true, dados: json as T, status: resposta.status };
+    if (status >= 200 && status < 300) return { ok: true, dados: json as T, status };
 
     // Sessão expirada (só vale com alguém logado; no login, 401 significa senha incorreta)
-    if (resposta.status === 401 && token) aoExpirarSessao?.();
+    if (status === 401 && token) aoExpirarSessao?.();
 
     const mensagem = (json as { erro?: string } | null)?.erro;
-    return { ok: false, erro: mensagem ?? 'Não foi possível concluir a ação. Tente novamente.', status: resposta.status };
+    return { ok: false, erro: mensagem ?? 'Não foi possível concluir a ação. Tente novamente.', status };
   } catch {
     return { ok: false, erro: 'Não foi possível conectar ao servidor.', status: 0 };
   }
