@@ -19,6 +19,29 @@ O fluxo principal da aplicação consiste nas seguintes etapas:
 * **Nuvem & Infraestrutura:** AWS
 * **Controle de Versão:** GitHub
 
+## Como iniciar
+Instale as dependências uma vez, na pasta raiz do projeto:
+
+```bash
+npm run instalar
+```
+
+Depois, inicie cada parte em um terminal separado.
+
+No primeiro terminal, inicie o backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+No segundo terminal, inicie o frontend web:
+
+```bash
+cd frontend
+npm run web
+```
+
 ## Equipe
 * Anne Carlini de Oliveira
 * Matheus Silva Santos
