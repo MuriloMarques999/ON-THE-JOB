@@ -5,10 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { ProgressBar } from '@/components/progress-bar';
 import { useAcompanhamento } from '@/data/data-context';
 import { formatarData, ROTULO_FILTRO_JORNADA, STATUS_JORNADA } from '@/data/format';
+import type { ItemAcompanhamento } from '@/data/queries';
 import type { FiltroJornada } from '@/data/types';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Acompanhamento dos novos colaboradores (RH).
@@ -19,6 +22,7 @@ import type { FiltroJornada } from '@/data/types';
 const FILTROS = Object.keys(ROTULO_FILTRO_JORNADA) as FiltroJornada[];
 
 export default function AcompanhamentoColaboradores() {
+  const r = useResponsivo();
   const router = useRouter();
   const params = useLocalSearchParams<{ status?: string }>();
   const filtro = FILTROS.find((f) => f === params.status);
@@ -33,7 +37,7 @@ export default function AcompanhamentoColaboradores() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Recursos Humanos" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
         <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
           <Text style={s.voltarTexto}>Voltar</Text>
@@ -52,32 +56,58 @@ export default function AcompanhamentoColaboradores() {
           </View>
         )}
 
-        <Card style={{ marginTop: 20 }}>
-          {itens.length === 0 && <Text style={s.vazio}>Nenhum colaborador encontrado.</Text>}
+        {r.largo ? (
+          <>
+            {itens.length === 0 && (
+              <Card style={{ marginTop: 20 }}>
+                <Text style={s.vazio}>Nenhum colaborador encontrado.</Text>
+              </Card>
+            )}
+            <Grade colunas={r.colunas(3)} esticar style={{ marginTop: 20 }}>
+              {itens.map((c) => (
+                <Card key={c.id}>
+                  <DadosColaborador c={c} />
+                </Card>
+              ))}
+            </Grade>
+          </>
+        ) : (
+          <Card style={{ marginTop: 20 }}>
+            {itens.length === 0 && <Text style={s.vazio}>Nenhum colaborador encontrado.</Text>}
 
-          {itens.map((c, i) => (
-            <View key={c.id} style={[s.item, i < itens.length - 1 && s.itemDivisor]}>
-              <Text style={s.nome}>{c.nome}</Text>
-              <Text style={s.texto}>{c.cargo}</Text>
-              <Text style={s.texto}>
-                Período de acompanhamento: {formatarData(c.dataInicio)} até {formatarData(c.dataFim)}
-              </Text>
-
-              <View style={{ marginTop: 8 }}>
-                <ProgressBar percent={c.percentual} height={7} />
+            {itens.map((c, i) => (
+              <View key={c.id} style={[s.item, i < itens.length - 1 && s.itemDivisor]}>
+                <DadosColaborador c={c} />
               </View>
-              <Text style={[s.texto, { marginTop: 6 }]}>
-                {c.concluidas} de {c.total} atividades concluídas
-              </Text>
-
-              <View style={[s.pilula, { backgroundColor: STATUS_JORNADA[c.status].cor }]}>
-                <Text style={s.pilulaTexto}>{STATUS_JORNADA[c.status].label}</Text>
-              </View>
-            </View>
-          ))}
-        </Card>
+            ))}
+          </Card>
+        )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Dados de um colaborador (no celular, um item da lista; em telas largas, um cartão)
+function DadosColaborador({ c }: { c: ItemAcompanhamento }) {
+  return (
+    <>
+      <Text style={s.nome}>{c.nome}</Text>
+      <Text style={s.texto}>{c.cargo}</Text>
+      <Text style={s.texto}>
+        Período de acompanhamento: {formatarData(c.dataInicio)} até {formatarData(c.dataFim)}
+      </Text>
+
+      <View style={{ marginTop: 8 }}>
+        <ProgressBar percent={c.percentual} height={7} />
+      </View>
+      <Text style={[s.texto, { marginTop: 6 }]}>
+        {c.concluidas} de {c.total} atividades concluídas
+      </Text>
+
+      <View style={[s.pilula, { backgroundColor: STATUS_JORNADA[c.status].cor }]}>
+        <Text style={s.pilulaTexto}>{STATUS_JORNADA[c.status].label}</Text>
+      </View>
+    </>
   );
 }
 

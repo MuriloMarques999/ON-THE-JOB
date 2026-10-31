@@ -5,10 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { ProgressBar } from '@/components/progress-bar';
 import { primeiroNomeDe, useAuth } from '@/context/auth-context';
 import { useHomeGestor } from '@/data/data-context';
 import { formatarData, STATUS_JORNADA } from '@/data/format';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 const PENDENCIA = {
   assinatura: { label: 'Pendente assinatura', icon: 'square-edit-outline' },
@@ -16,6 +18,7 @@ const PENDENCIA = {
 } as const;
 
 export default function HomeGestor() {
+  const r = useResponsivo();
   const { user } = useAuth();
   const router = useRouter();
   const home = useHomeGestor();
@@ -25,7 +28,7 @@ export default function HomeGestor() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Gestor" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
         {/* Boas-vindas */}
         <Text style={s.titulo}>
           Bem vindo,{'\n'}
@@ -35,7 +38,7 @@ export default function HomeGestor() {
           Acompanhe a jornada de onboarding dos novos colaboradores, em tempo real e sem burocracias.
         </Text>
 
-        <View style={s.cards}>
+        <Grade colunas={r.colunas(2)} esticar={r.largo} style={s.cards}>
           {/* Minha equipe */}
           <Card>
             <CardCabecalho titulo="Minha Equipe" onVerTudo={() => router.push('/gestor/equipe' as Href)} />
@@ -110,7 +113,7 @@ export default function HomeGestor() {
               );
             })}
           </Card>
-        </View>
+        </Grade>
       </ScrollView>
     </SafeAreaView>
   );

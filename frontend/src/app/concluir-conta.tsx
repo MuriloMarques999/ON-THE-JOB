@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandHeader } from '@/components/brand-header';
 import { Campo, EMAIL_RE, formStyles, PLACEHOLDER } from '@/components/form-campo';
 import { useAuth } from '@/context/auth-context';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Tela aberta pelo link do e-mail de convite.
@@ -46,6 +47,7 @@ const REGRAS: { texto: string; ok: (senha: string) => boolean }[] = [
 const um = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
 
 export default function ConcluirConta() {
+  const r = useResponsivo();
   const router = useRouter();
   const { criarConta } = useAuth();
   const params = useLocalSearchParams<{ perfil?: string; email?: string; token?: string }>();
@@ -108,7 +110,7 @@ export default function ConcluirConta() {
   return (
     <SafeAreaView style={s.safe}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[s.container, r.painel]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <BrandHeader />
 
           <Text style={[s.titulo, { marginTop: 48 }]}>Conclua sua conta.</Text>

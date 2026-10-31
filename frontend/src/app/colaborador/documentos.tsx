@@ -8,6 +8,7 @@ import { AppHeader } from '@/components/app-header';
 import { AssinaturaTexto } from '@/components/assinatura-texto';
 import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { SuccessBanner } from '@/components/success-banner';
 import { useAuth } from '@/context/auth-context';
 import { useAtividades, useDocumentos, useHomeColaborador } from '@/data/data-context';
@@ -15,6 +16,7 @@ import { formatarData } from '@/data/format';
 import { abrirPdf } from '@/services/pdf/abrir-pdf';
 import { documentoConclusao } from '@/services/pdf/conclusao';
 import { documentoTermos } from '@/services/pdf/termos';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Documentos do colaborador: termos aceitos, termo de conclusão (resumo e assinaturas) e biblioteca.
@@ -27,6 +29,7 @@ import { documentoTermos } from '@/services/pdf/termos';
 const dois = (n: number) => String(n).padStart(2, '0');
 
 export default function Documentos() {
+  const r = useResponsivo();
   const router = useRouter();
   const d = useDocumentos();
   const { user } = useAuth();
@@ -73,7 +76,7 @@ export default function Documentos() {
       <AppHeader perfil="Colaborador" />
 
       <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
           <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
             <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
             <Text style={s.voltarTexto}>Voltar</Text>
@@ -82,119 +85,124 @@ export default function Documentos() {
           <Text style={s.titulo}>Documentos</Text>
           <Text style={s.subtitulo}>Orientações, materiais e finalização do acompanhamento.</Text>
 
-          {/* Termos de uso / LGPD aceitos no primeiro acesso: disponíveis desde o início */}
-          {!!d.termos && (
-            <Card style={s.bloco}>
-              <Text style={s.blocoTitulo}>Termos aceitos</Text>
-              <View style={[s.docLinha, { marginTop: 10 }]}>
-                <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.docNome}>Termos de Uso e Política de Privacidade (LGPD)</Text>
-                  <Text style={s.docSub}>
-                    LGPD • PDF • aceito em {formatarData(d.termos.aceitoEm)} • versão {d.termos.versao}
+          {/* Telas largas: termos e termo de conclusão à esquerda, biblioteca à direita */}
+          <Grade colunas={r.colunas(2)} gap={r.largo ? 20 : 0}>
+            <View>
+              {/* Termos de uso / LGPD aceitos no primeiro acesso: disponíveis desde o início */}
+              {!!d.termos && (
+                <Card style={s.bloco}>
+                  <Text style={s.blocoTitulo}>Termos aceitos</Text>
+                  <View style={[s.docLinha, { marginTop: 10 }]}>
+                    <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.docNome}>Termos de Uso e Política de Privacidade (LGPD)</Text>
+                      <Text style={s.docSub}>
+                        LGPD • PDF • aceito em {formatarData(d.termos.aceitoEm)} • versão {d.termos.versao}
+                      </Text>
+                    </View>
+                    <Pressable onPress={abrirTermos} hitSlop={8} accessibilityRole="button" accessibilityLabel="Abrir PDF dos termos">
+                      <Text style={s.abrir}>Abrir</Text>
+                    </Pressable>
+                  </View>
+                </Card>
+              )}
+
+              {/* Termo de conclusão: resumo e assinaturas só depois de concluir todas as atividades */}
+              {!d.liberado ? (
+                <Card style={s.bloco}>
+                  <Text style={s.blocoTitulo}>Termo de conclusão</Text>
+                  <Text style={[s.linhaInfo, { marginTop: 6 }]}>
+                    O resumo do acompanhamento e as assinaturas do colaborador e do gestor ficam disponíveis após a
+                    conclusão de todas as atividades.
                   </Text>
-                </View>
-                <Pressable onPress={abrirTermos} hitSlop={8} accessibilityRole="button" accessibilityLabel="Abrir PDF dos termos">
-                  <Text style={s.abrir}>Abrir</Text>
-                </Pressable>
+                  <Text style={[s.linhaInfo, { marginTop: 6 }]}>
+                    Atividades concluídas: {d.atividadesRealizadas} de {d.total}
+                  </Text>
+                </Card>
+              ) : (
+                <>
+                  {/* Resumo do acompanhamento */}
+                  <Card style={s.bloco}>
+                    <Text style={s.blocoTitulo}>Resumo do acompanhamento</Text>
+                    <Text style={[s.linhaInfo, { marginTop: 10 }]}>{d.nome}</Text>
+                    <Text style={s.linhaInfo}>{d.cargo}</Text>
+                    <Text style={s.linhaInfo}>
+                      Período de acompanhamento: {formatarData(d.inicio)} até {formatarData(d.fim)}
+                    </Text>
+
+                    <View style={s.indicadores}>
+                      <Indicador valor={dois(d.atividadesRealizadas)} rotulo="atividades realizadas" />
+                      <Indicador valor={dois(d.feedbacks)} rotulo={d.feedbacks === 1 ? 'feedback registrado' : 'feedbacks registrados'} />
+                      {assinou && <Indicador valor={String(d.percentual)} rotulo="conclusão" />}
+                    </View>
+
+                    {/* Assinaturas */}
+                    <View style={s.caixaAss}>
+                      <Text style={s.caixaRotulo}>Assinatura do colaborador</Text>
+                      {d.assinaturaColaborador ? (
+                        <AssinaturaTexto nome={d.assinaturaColaborador.nome} />
+                      ) : (
+                        <BotaoComAviso
+                          compacto
+                          texto="Assinar"
+                          icone="square-edit-outline"
+                          habilitado
+                          onPress={() => router.push('/colaborador/assinar-documento' as Href)}
+                        />
+                      )}
+                    </View>
+
+                    <View style={s.caixaAss}>
+                      <Text style={s.caixaRotulo}>Assinatura do gestor</Text>
+                      {d.assinaturaGestor ? (
+                        <AssinaturaTexto nome={d.assinaturaGestor.nome} />
+                      ) : (
+                        // Só o gestor pode assinar aqui: o botão fica sempre desabilitado para o colaborador
+                        <BotaoComAviso
+                          compacto
+                          texto="Assinar"
+                          icone="square-edit-outline"
+                          habilitado={false}
+                          onPress={() => {}}
+                          aviso={
+                            assinou
+                              ? 'O gestor já foi notificado da sua assinatura.'
+                              : 'O gestor só poderá assinar depois da sua assinatura.'
+                          }
+                        />
+                      )}
+                    </View>
+                  </Card>
+                </>
+              )}
+            </View>
+
+            {/* Biblioteca de documentos: disponível durante toda a jornada */}
+            <Card style={s.bloco}>
+              <Text style={s.blocoTitulo}>Biblioteca de documentos</Text>
+              <View style={{ marginTop: 14 }}>
+                {d.biblioteca.map((doc) => (
+                  <View key={doc.id} style={s.docLinha}>
+                    <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.docNome}>{doc.titulo}</Text>
+                      <Text style={s.docSub}>
+                        {doc.tipo} • {doc.formato}
+                      </Text>
+                    </View>
+                    <Pressable
+                      // O formulário (termo de conclusão assinado) é gerado em PDF; os demais ainda são simulados
+                      onPress={() => (doc.id.startsWith('form-') ? abrirConclusao() : setAberto(doc.titulo))}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Abrir ${doc.titulo}`}>
+                      <Text style={s.abrir}>Abrir</Text>
+                    </Pressable>
+                  </View>
+                ))}
               </View>
             </Card>
-          )}
-
-          {/* Termo de conclusão: resumo e assinaturas só depois de concluir todas as atividades */}
-          {!d.liberado ? (
-            <Card style={s.bloco}>
-              <Text style={s.blocoTitulo}>Termo de conclusão</Text>
-              <Text style={[s.linhaInfo, { marginTop: 6 }]}>
-                O resumo do acompanhamento e as assinaturas do colaborador e do gestor ficam disponíveis após a
-                conclusão de todas as atividades.
-              </Text>
-              <Text style={[s.linhaInfo, { marginTop: 6 }]}>
-                Atividades concluídas: {d.atividadesRealizadas} de {d.total}
-              </Text>
-            </Card>
-          ) : (
-            <>
-              {/* Resumo do acompanhamento */}
-              <Card style={s.bloco}>
-                <Text style={s.blocoTitulo}>Resumo do acompanhamento</Text>
-                <Text style={[s.linhaInfo, { marginTop: 10 }]}>{d.nome}</Text>
-                <Text style={s.linhaInfo}>{d.cargo}</Text>
-                <Text style={s.linhaInfo}>
-                  Período de acompanhamento: {formatarData(d.inicio)} até {formatarData(d.fim)}
-                </Text>
-
-                <View style={s.indicadores}>
-                  <Indicador valor={dois(d.atividadesRealizadas)} rotulo="atividades realizadas" />
-                  <Indicador valor={dois(d.feedbacks)} rotulo={d.feedbacks === 1 ? 'feedback registrado' : 'feedbacks registrados'} />
-                  {assinou && <Indicador valor={String(d.percentual)} rotulo="conclusão" />}
-                </View>
-
-                {/* Assinaturas */}
-                <View style={s.caixaAss}>
-                  <Text style={s.caixaRotulo}>Assinatura do colaborador</Text>
-                  {d.assinaturaColaborador ? (
-                    <AssinaturaTexto nome={d.assinaturaColaborador.nome} />
-                  ) : (
-                    <BotaoComAviso
-                      compacto
-                      texto="Assinar"
-                      icone="square-edit-outline"
-                      habilitado
-                      onPress={() => router.push('/colaborador/assinar-documento' as Href)}
-                    />
-                  )}
-                </View>
-
-                <View style={s.caixaAss}>
-                  <Text style={s.caixaRotulo}>Assinatura do gestor</Text>
-                  {d.assinaturaGestor ? (
-                    <AssinaturaTexto nome={d.assinaturaGestor.nome} />
-                  ) : (
-                    // Só o gestor pode assinar aqui: o botão fica sempre desabilitado para o colaborador
-                    <BotaoComAviso
-                      compacto
-                      texto="Assinar"
-                      icone="square-edit-outline"
-                      habilitado={false}
-                      onPress={() => {}}
-                      aviso={
-                        assinou
-                          ? 'O gestor já foi notificado da sua assinatura.'
-                          : 'O gestor só poderá assinar depois da sua assinatura.'
-                      }
-                    />
-                  )}
-                </View>
-              </Card>
-            </>
-          )}
-
-          {/* Biblioteca de documentos: disponível durante toda a jornada */}
-          <Card style={s.bloco}>
-            <Text style={s.blocoTitulo}>Biblioteca de documentos</Text>
-            <View style={{ marginTop: 14 }}>
-              {d.biblioteca.map((doc) => (
-                <View key={doc.id} style={s.docLinha}>
-                  <MaterialCommunityIcons name="file-document-outline" size={20} color="#3B8D9C" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.docNome}>{doc.titulo}</Text>
-                    <Text style={s.docSub}>
-                      {doc.tipo} • {doc.formato}
-                    </Text>
-                  </View>
-                  <Pressable
-                    // O formulário (termo de conclusão assinado) é gerado em PDF; os demais ainda são simulados
-                    onPress={() => (doc.id.startsWith('form-') ? abrirConclusao() : setAberto(doc.titulo))}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Abrir ${doc.titulo}`}>
-                    <Text style={s.abrir}>Abrir</Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          </Card>
+          </Grade>
         </ScrollView>
 
         {/* Download simulado: o PDF real virá do backend */}

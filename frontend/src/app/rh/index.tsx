@@ -5,11 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { primeiroNomeDe, useAuth } from '@/context/auth-context';
 import { useHomeRH } from '@/data/data-context';
 import { formatarData } from '@/data/format';
 import type { HomeRH } from '@/data/queries';
 import type { FiltroJornada } from '@/data/types';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -26,12 +28,55 @@ export default function HomeRH() {
   const router = useRouter();
   const home = useHomeRH();
   const primeiroNome = primeiroNomeDe(user?.nome);
+  const r = useResponsivo();
+
+  // Assinaturas pendentes
+  const assinaturas = (
+    <Card>
+      <Text style={s.cardTitulo}>Assinaturas pendentes</Text>
+
+      {home.assinaturasPendentes.length === 0 && <Text style={s.detalhe}>Nenhuma assinatura pendente.</Text>}
+
+      {home.assinaturasPendentes.map((a) => (
+        <View key={a.id} style={s.linha}>
+          <Text style={s.nome}>{a.nome}</Text>
+          <Text style={s.detalhe}>Assinaturas pendentes</Text>
+        </View>
+      ))}
+
+      {home.jornadasAtencao > 0 && (
+        <View style={s.alerta}>
+          <MaterialCommunityIcons name="check-all" size={18} color="#25626B" />
+          <Text style={s.alertaTexto}>{home.jornadasAtencao} jornada(s) precisam de atenção</Text>
+          <Pressable onPress={() => router.push('/rh/assinaturas' as Href)}>
+            <Text style={s.verTudo}>Ver tudo</Text>
+          </Pressable>
+        </View>
+      )}
+    </Card>
+  );
+
+  // Eventos automáticos
+  const eventos = (
+    <Card>
+      <View style={s.cardCabecalho}>
+        <MaterialCommunityIcons name="flash-outline" size={20} color="#3B8D9C" />
+        <Text style={s.cardTitulo}>Eventos automáticos recentes</Text>
+      </View>
+      {home.eventos.map((e) => (
+        <View key={e.id} style={s.linha}>
+          <Text style={s.detalheEscuro}>{e.texto}</Text>
+          <Text style={s.data}>{formatarData(e.data)}</Text>
+        </View>
+      ))}
+    </Card>
+  );
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="RH" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
         {/* Boas-vindas */}
         <Text style={s.titulo}>
           Bem vindo,{'\n'}
@@ -42,12 +87,12 @@ export default function HomeRH() {
         </Text>
 
         {/* Ações principais */}
-        <View style={s.acoes}>
-          <Pressable style={s.botao} onPress={() => router.push('/rh/cadastrar-colaborador' as Href)}>
+        <View style={[s.acoes, r.largo && s.acoesLado]}>
+          <Pressable style={[s.botao, r.largo && s.botaoLado]} onPress={() => router.push('/rh/cadastrar-colaborador' as Href)}>
             <MaterialCommunityIcons name="account-plus-outline" size={20} color="#fff" />
             <Text style={s.botaoTexto}>Cadastrar novo colaborador</Text>
           </Pressable>
-          <Pressable style={s.botao} onPress={() => router.push('/rh/cadastrar-gestor' as Href)}>
+          <Pressable style={[s.botao, r.largo && s.botaoLado]} onPress={() => router.push('/rh/cadastrar-gestor' as Href)}>
             <MaterialCommunityIcons name="account-plus-outline" size={20} color="#fff" />
             <Text style={s.botaoTexto}>Cadastrar novo Gestor</Text>
           </Pressable>
@@ -58,7 +103,7 @@ export default function HomeRH() {
           {INDICADORES.map((item) => (
             <Pressable
               key={item.chave}
-              style={s.stat}
+              style={[s.stat, r.desktop && s.statQuatro]}
               accessibilityRole="button"
               onPress={() =>
                 item.rota
@@ -76,45 +121,21 @@ export default function HomeRH() {
 
         <Divider />
 
-        {/* Assinaturas pendentes */}
-        <Card>
-          <Text style={s.cardTitulo}>Assinaturas pendentes</Text>
+        {/* Celular: um embaixo do outro. Telas largas: lado a lado */}
+        {r.largo ? (
+          <Grade colunas={2} esticar>
+            {assinaturas}
+            {eventos}
+          </Grade>
+        ) : (
+          <>
+            {assinaturas}
 
-          {home.assinaturasPendentes.length === 0 && <Text style={s.detalhe}>Nenhuma assinatura pendente.</Text>}
+            <Divider />
 
-          {home.assinaturasPendentes.map((a) => (
-            <View key={a.id} style={s.linha}>
-              <Text style={s.nome}>{a.nome}</Text>
-              <Text style={s.detalhe}>Assinaturas pendentes</Text>
-            </View>
-          ))}
-
-          {home.jornadasAtencao > 0 && (
-            <View style={s.alerta}>
-              <MaterialCommunityIcons name="check-all" size={18} color="#25626B" />
-              <Text style={s.alertaTexto}>{home.jornadasAtencao} jornada(s) precisam de atenção</Text>
-              <Pressable onPress={() => router.push('/rh/assinaturas' as Href)}>
-                <Text style={s.verTudo}>Ver tudo</Text>
-              </Pressable>
-            </View>
-          )}
-        </Card>
-
-        <Divider />
-
-        {/* Eventos automáticos */}
-        <Card>
-          <View style={s.cardCabecalho}>
-            <MaterialCommunityIcons name="flash-outline" size={20} color="#3B8D9C" />
-            <Text style={s.cardTitulo}>Eventos automáticos recentes</Text>
-          </View>
-          {home.eventos.map((e) => (
-            <View key={e.id} style={s.linha}>
-              <Text style={s.detalheEscuro}>{e.texto}</Text>
-              <Text style={s.data}>{formatarData(e.data)}</Text>
-            </View>
-          ))}
-        </Card>
+            {eventos}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -134,11 +155,14 @@ const s = StyleSheet.create({
   subtitulo: { marginTop: 12, fontSize: 13, color: '#222', lineHeight: 18 },
 
   acoes: { marginTop: 20, gap: 10 },
+  acoesLado: { flexDirection: 'row' },
+  botaoLado: { flex: 1 },
   botao: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 40, borderRadius: 6, backgroundColor: TEAL_ESCURO },
   botaoTexto: { color: '#fff', fontSize: 14, fontWeight: '500' },
 
   grid: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   stat: { width: '48%', flexGrow: 1, minHeight: 112, borderRadius: 12, backgroundColor: '#D9D9D9', overflow: 'hidden', padding: 12, paddingTop: 48 },
+  statQuatro: { width: '22%' }, // computador: os 4 indicadores numa linha só
   statTile: { position: 'absolute', top: 0, left: 0, width: 48, height: 40, borderBottomRightRadius: 14, backgroundColor: TEAL_ESCURO, alignItems: 'center', justifyContent: 'center' },
   statValor: { position: 'absolute', top: 8, right: 14, fontSize: 24, fontWeight: '800', color: '#111' },
   statLabel: { fontSize: 14, fontWeight: '800', color: '#111', lineHeight: 18 },

@@ -17,6 +17,7 @@ import { BrandHeader } from '@/components/brand-header';
 import { PainelTeste } from '@/components/painel-teste';
 import { SuccessBanner } from '@/components/success-banner';
 import { useAuth, type Role } from '@/context/auth-context';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 const PERFIS: { id: Role; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
   { id: 'rh', label: 'RH', icon: 'account-multiple-outline' },
@@ -25,6 +26,7 @@ const PERFIS: { id: Role; label: string; icon: keyof typeof MaterialCommunityIco
 ];
 
 export default function LoginScreen() {
+  const r = useResponsivo();
   const { user, login, avisoLogin } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ conta?: string; perfil?: string }>();
@@ -66,7 +68,7 @@ export default function LoginScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.container, r.painel]} keyboardShouldPersistTaps="handled">
           <BrandHeader />
 
           {/* Título */}

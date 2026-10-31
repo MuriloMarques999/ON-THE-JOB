@@ -5,12 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { ProgressBar } from '@/components/progress-bar';
 import { primeiroNomeDe, useAuth } from '@/context/auth-context';
 import { useHomeColaborador } from '@/data/data-context';
 import { formatarData, STATUS_ATIVIDADE } from '@/data/format';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 export default function HomeColaborador() {
+  const r = useResponsivo();
   const { user } = useAuth();
   const router = useRouter();
   const home = useHomeColaborador();
@@ -20,7 +23,7 @@ export default function HomeColaborador() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Colaborador" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
         {/* Boas-vindas */}
         <Text style={s.titulo}>
           Bem vinda,{'\n'}
@@ -43,53 +46,56 @@ export default function HomeColaborador() {
             </Text>
           </Card>
 
-          {/* Próximas atividades */}
-          <Card>
-            <Text style={s.cardTitulo}>Próximas atividades</Text>
+          {/* Telas largas: próximas atividades e feedbacks lado a lado */}
+          <Grade colunas={r.colunas(2)} esticar={r.largo}>
+            {/* Próximas atividades */}
+            <Card>
+              <Text style={s.cardTitulo}>Próximas atividades</Text>
 
-            {home.proximas.length === 0 ? (
-              <Text style={s.miudo}>Tudo em dia! Parabéns!</Text>
-            ) : (
-              home.proximas.map((a) => (
-                <View key={a.id} style={s.linha}>
-                  <Text style={s.nome}>{a.titulo}</Text>
-                  <Text style={s.miudo}>
-                    Prazo: {formatarData(a.prazo)} • {STATUS_ATIVIDADE[a.status].label}
-                  </Text>
-                </View>
-              ))
-            )}
+              {home.proximas.length === 0 ? (
+                <Text style={s.miudo}>Tudo em dia! Parabéns!</Text>
+              ) : (
+                home.proximas.map((a) => (
+                  <View key={a.id} style={s.linha}>
+                    <Text style={s.nome}>{a.titulo}</Text>
+                    <Text style={s.miudo}>
+                      Prazo: {formatarData(a.prazo)} • {STATUS_ATIVIDADE[a.status].label}
+                    </Text>
+                  </View>
+                ))
+              )}
 
-            <Pressable style={s.botao} onPress={() => router.push('/colaborador/atividades' as Href)}>
-              <Text style={s.botaoTexto}>Continuar jornada</Text>
-            </Pressable>
+              <Pressable style={s.botao} onPress={() => router.push('/colaborador/atividades' as Href)}>
+                <Text style={s.botaoTexto}>Continuar jornada</Text>
+              </Pressable>
 
-            {/* Documentos: abre a qualquer momento (o termo de conclusão só libera no fim da jornada) */}
-            <BotaoComAviso
-              texto="Documentos"
-              icone="file-document-outline"
-              habilitado
-              onPress={() => router.push('/colaborador/documentos' as Href)}
-              style={s.botaoDocumentos}
-            />
-          </Card>
+              {/* Documentos: abre a qualquer momento (o termo de conclusão só libera no fim da jornada) */}
+              <BotaoComAviso
+                texto="Documentos"
+                icone="file-document-outline"
+                habilitado
+                onPress={() => router.push('/colaborador/documentos' as Href)}
+                style={s.botaoDocumentos}
+              />
+            </Card>
 
-          {/* Feedbacks */}
-          <Card>
-            <Text style={s.cardTitulo}>Feedbacks recebidos</Text>
-            {home.feedbacks.length === 0 ? (
-              <Text style={s.miudo}>Você ainda não recebeu feedbacks.</Text>
-            ) : (
-              home.feedbacks.map((f) => (
-                <View key={f.id} style={s.feedback}>
-                  <Text style={s.feedbackTexto}>{f.texto}</Text>
-                  <Text style={s.feedbackAutor}>
-                    {f.autor} • {formatarData(f.data)}
-                  </Text>
-                </View>
-              ))
-            )}
-          </Card>
+            {/* Feedbacks */}
+            <Card>
+              <Text style={s.cardTitulo}>Feedbacks recebidos</Text>
+              {home.feedbacks.length === 0 ? (
+                <Text style={s.miudo}>Você ainda não recebeu feedbacks.</Text>
+              ) : (
+                home.feedbacks.map((f) => (
+                  <View key={f.id} style={s.feedback}>
+                    <Text style={s.feedbackTexto}>{f.texto}</Text>
+                    <Text style={s.feedbackAutor}>
+                      {f.autor} • {formatarData(f.data)}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </Card>
+          </Grade>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -10,6 +10,7 @@ import { Card } from '@/components/card';
 import { Carregando } from '@/components/carregando';
 import { useAssinarDocumento, useDocumentos } from '@/data/data-context';
 import { formatarData } from '@/data/format';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Orientações e finalização: o colaborador assina digitalmente o termo de conclusão.
@@ -19,6 +20,7 @@ import { formatarData } from '@/data/format';
  */
 
 export default function AssinarDocumento() {
+  const r = useResponsivo();
   const router = useRouter();
   const d = useDocumentos();
   const assinar = useAssinarDocumento();
@@ -80,7 +82,7 @@ export default function AssinarDocumento() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Colaborador" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[s.content, r.conteudoEstreito]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
           <Text style={s.voltarTexto}>Voltar</Text>

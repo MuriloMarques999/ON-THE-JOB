@@ -7,9 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { BarraStatus, LegendaStatus } from '@/components/barra-status';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { ProgressBar } from '@/components/progress-bar';
 import { usePainelGestores } from '@/data/data-context';
 import { STATUS_JORNADA } from '@/data/format';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Painel de Gestores (RH): visão geral do onboarding e a situação da equipe de cada gestor.
@@ -22,6 +24,7 @@ import { STATUS_JORNADA } from '@/data/format';
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 export default function PainelGestores() {
+  const r = useResponsivo();
   const router = useRouter();
   const { resumo, gestores } = usePainelGestores();
   const [abertos, setAbertos] = useState<Record<string, boolean>>({});
@@ -42,7 +45,7 @@ export default function PainelGestores() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Recursos Humanos" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
         <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
           <Text style={s.voltarTexto}>Voltar</Text>
@@ -54,7 +57,7 @@ export default function PainelGestores() {
         {/* Indicadores gerais */}
         <View style={s.grid}>
           {indicadores.map((i) => (
-            <View key={i.rotulo} style={s.stat}>
+            <View key={i.rotulo} style={[s.stat, r.desktop && s.statQuatro]}>
               <View style={s.statTile}>
                 <MaterialCommunityIcons name={i.icon} size={24} color="#fff" />
               </View>
@@ -86,7 +89,7 @@ export default function PainelGestores() {
         <Text style={s.secao}>Gestores</Text>
         {gestores.length === 0 && <Text style={s.vazio}>Nenhum gestor cadastrado.</Text>}
 
-        <View style={s.lista}>
+        <Grade colunas={r.colunas(2)} gap={14} style={s.lista}>
           {gestores.map((g) => {
             const aberto = !!abertos[g.id];
             const pendencias = g.feedbacksPendentes + g.assinaturasPendentes;
@@ -188,7 +191,7 @@ export default function PainelGestores() {
               </Card>
             );
           })}
-        </View>
+        </Grade>
       </ScrollView>
     </SafeAreaView>
   );
@@ -208,6 +211,7 @@ const s = StyleSheet.create({
 
   // Cartões de indicador: mesmo desenho da home do RH
   grid: { marginTop: 22, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  statQuatro: { width: '22%' }, // computador: os 4 indicadores numa linha só
   stat: { width: '48%', flexGrow: 1, minHeight: 112, borderRadius: 12, backgroundColor: '#D9D9D9', overflow: 'hidden', padding: 12, paddingTop: 48 },
   statTile: { position: 'absolute', top: 0, left: 0, width: 48, height: 40, borderBottomRightRadius: 14, backgroundColor: TEAL_ESCURO, alignItems: 'center', justifyContent: 'center' },
   statValor: { position: 'absolute', top: 8, right: 14, fontSize: 24, fontWeight: '800', color: '#111' },

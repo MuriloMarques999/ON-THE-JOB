@@ -7,10 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { useAcoesAtividade, useAtividades } from '@/data/data-context';
 import { formatarDataCurta, STATUS_ATIVIDADE, textoPrazo } from '@/data/format';
 import type { ItemAtividade } from '@/data/queries';
 import type { StatusAtividade } from '@/data/types';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Atividades do colaborador, separadas por semana.
@@ -23,6 +25,7 @@ import type { StatusAtividade } from '@/data/types';
 const STATUS_ORDEM: StatusAtividade[] = ['concluida', 'em_andamento', 'pendente', 'atrasada'];
 
 export default function Atividades() {
+  const resp = useResponsivo();
   const router = useRouter();
   const { hoje, semanas, total, concluidas } = useAtividades();
   const todasConcluidas = total > 0 && concluidas === total; // libera a assinatura digital
@@ -53,7 +56,7 @@ export default function Atividades() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Colaborador" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, resp.conteudo]} showsVerticalScrollIndicator={false}>
         <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
           <Text style={s.voltarTexto}>Voltar</Text>
@@ -63,13 +66,13 @@ export default function Atividades() {
         <Text style={s.subtitulo}>{totalVisiveis} atividades visíveis para o seu perfil</Text>
 
         {/* Filtro por status */}
-        <Pressable style={s.filtro} onPress={() => setMenuAberto((v) => !v)} accessibilityRole="button">
+        <Pressable style={[s.filtro, resp.largo && s.filtroLargo]} onPress={() => setMenuAberto((v) => !v)} accessibilityRole="button">
           <Text style={s.filtroTexto}>{filtro ? STATUS_ATIVIDADE[filtro].label : 'Todos os status'}</Text>
           <MaterialCommunityIcons name={menuAberto ? 'chevron-up' : 'chevron-down'} size={22} color="#25626B" />
         </Pressable>
 
         {menuAberto && (
-          <View style={s.menu}>
+          <View style={[s.menu, resp.largo && s.filtroLargo]}>
             <Opcao rotulo="Todos os status" ativo={filtro === null} onPress={() => { setFiltro(null); setMenuAberto(false); }} />
             {STATUS_ORDEM.map((st) => (
               <Opcao
@@ -105,16 +108,19 @@ export default function Atividades() {
                 <MaterialCommunityIcons name={fechada ? 'chevron-down' : 'chevron-up'} size={24} color="#25626B" />
               </Pressable>
 
-              {!fechada &&
-                sem.filtradas.map((a) => (
-                  <CartaoAtividade
-                    key={a.id}
-                    a={a}
-                    hoje={hoje}
-                    onIniciar={() => agir(iniciar, a.id)}
-                    onConcluir={() => agir(concluir, a.id)}
-                  />
-                ))}
+              {!fechada && (
+                <Grade colunas={resp.colunas(3)} gap={12}>
+                  {sem.filtradas.map((a) => (
+                    <CartaoAtividade
+                      key={a.id}
+                      a={a}
+                      hoje={hoje}
+                      onIniciar={() => agir(iniciar, a.id)}
+                      onConcluir={() => agir(concluir, a.id)}
+                    />
+                  ))}
+                </Grade>
+              )}
             </View>
           );
         })}
@@ -216,6 +222,7 @@ const s = StyleSheet.create({
 
   filtro: { marginTop: 18, flexDirection: 'row', alignItems: 'center', height: 32, paddingHorizontal: 12, borderRadius: 6, backgroundColor: '#D9D9D9' },
   filtroTexto: { flex: 1, fontSize: 11, color: '#333' },
+  filtroLargo: { alignSelf: 'flex-start', width: 320 },
   menu: { marginTop: 4, padding: 8, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#D0D0D0', gap: 2 },
   opcao: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7, paddingHorizontal: 6 },
   opcaoTexto: { fontSize: 11, color: '#333' },

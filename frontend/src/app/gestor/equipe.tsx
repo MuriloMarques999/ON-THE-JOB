@@ -6,9 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { useEquipe } from '@/data/data-context';
 import { STATUS_ATIVIDADE, textoPrazo } from '@/data/format';
 import type { StatusJornada } from '@/data/types';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Acompanhamento da jornada de onboarding (Gestor): só os colaboradores que ele gerencia.
@@ -21,6 +23,7 @@ import type { StatusJornada } from '@/data/types';
 const STATUS_ORDEM: StatusJornada[] = ['concluida', 'em_andamento', 'pendente', 'atrasada'];
 
 export default function AcompanhamentoEquipe() {
+  const r = useResponsivo();
   const router = useRouter();
   const [filtro, setFiltro] = useState<StatusJornada | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
@@ -36,7 +39,7 @@ export default function AcompanhamentoEquipe() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Gestor" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
         <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
           <Text style={s.voltarTexto}>Voltar</Text>
@@ -47,13 +50,13 @@ export default function AcompanhamentoEquipe() {
         </Text>
 
         {/* Filtro por status */}
-        <Pressable style={s.filtro} onPress={() => setMenuAberto((v) => !v)} accessibilityRole="button">
+        <Pressable style={[s.filtro, r.largo && s.filtroLargo]} onPress={() => setMenuAberto((v) => !v)} accessibilityRole="button">
           <Text style={s.filtroTexto}>{filtro ? STATUS_ATIVIDADE[filtro].label : 'Todos os status'}</Text>
           <MaterialCommunityIcons name={menuAberto ? 'chevron-up' : 'chevron-down'} size={22} color="#25626B" />
         </Pressable>
 
         {menuAberto && (
-          <View style={s.menu}>
+          <View style={[s.menu, r.largo && s.filtroLargo]}>
             <Opcao rotulo="Todos os status" ativo={filtro === null} onPress={() => { setFiltro(null); setMenuAberto(false); }} />
             {STATUS_ORDEM.map((st) => (
               <Opcao
@@ -69,7 +72,7 @@ export default function AcompanhamentoEquipe() {
 
         {itens.length === 0 && <Text style={s.vazio}>Nenhum colaborador encontrado.</Text>}
 
-        <View style={s.lista}>
+        <Grade colunas={r.colunas(2)} gap={14} style={s.lista}>
           {itens.map((c) => {
             const st = STATUS_ATIVIDADE[c.status];
             const aberto = !!expandidos[c.id];
@@ -144,7 +147,7 @@ export default function AcompanhamentoEquipe() {
               </Card>
             );
           })}
-        </View>
+        </Grade>
       </ScrollView>
     </SafeAreaView>
   );
@@ -177,6 +180,7 @@ const s = StyleSheet.create({
 
   vazio: { marginTop: 24, fontSize: 12, color: '#444' },
   lista: { marginTop: 18, gap: 14 },
+  filtroLargo: { alignSelf: 'flex-start', width: 320 },
 
   cartao: { paddingVertical: 16 },
   nome: { fontSize: 16, fontWeight: '800', color: '#111' },

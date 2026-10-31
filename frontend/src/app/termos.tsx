@@ -10,6 +10,7 @@ import { useAuth } from '@/context/auth-context';
 import { formatarData } from '@/data/format';
 import { abrirPdf } from '@/services/pdf/abrir-pdf';
 import { documentoTermos } from '@/services/pdf/termos';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Termos de uso e política de privacidade (LGPD).
@@ -19,6 +20,7 @@ import { documentoTermos } from '@/services/pdf/termos';
  * - Depois do aceite: não aparece mais no login; vira só consulta (menu ☰ e tela de Documentos).
  */
 export default function Termos() {
+  const r = useResponsivo();
   const router = useRouter();
   const { user, aceitarTermos, recusarTermos } = useAuth();
   const [marcado, setMarcado] = useState(false);
@@ -54,7 +56,7 @@ export default function Termos() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.container, r.painel]} showsVerticalScrollIndicator={false}>
         {consulta ? (
           <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
             <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />

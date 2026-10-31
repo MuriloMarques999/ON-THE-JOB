@@ -11,6 +11,7 @@ import { Carregando } from '@/components/carregando';
 import { useAuth } from '@/context/auth-context';
 import { useAcoesGestor, useAssinaturaGestor } from '@/data/data-context';
 import { formatarData } from '@/data/format';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Assinatura do gestor (depois que o colaborador já assinou).
@@ -20,6 +21,7 @@ import { formatarData } from '@/data/format';
  */
 
 export default function AssinarDocumentoGestor() {
+  const r = useResponsivo();
   const router = useRouter();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -88,7 +90,7 @@ export default function AssinarDocumentoGestor() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <AppHeader perfil="Gestor" />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[s.content, r.conteudoEstreito]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
           <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
           <Text style={s.voltarTexto}>Voltar</Text>

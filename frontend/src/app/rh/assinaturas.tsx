@@ -6,11 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { SuccessBanner } from '@/components/success-banner';
 import { useAssinaturas, useSolicitarAssinatura } from '@/data/data-context';
 import { STATUS_ASSINATURA } from '@/data/format';
 import type { ItemAssinatura } from '@/data/queries';
 import type { StatusAssinatura } from '@/data/types';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * Assinatura de documentos (RH): documentos assinados e pendentes de cada colaborador e gestor.
@@ -18,6 +20,7 @@ import type { StatusAssinatura } from '@/data/types';
  */
 
 export default function AssinaturaDocumentos() {
+  const r = useResponsivo();
   const router = useRouter();
   const { assinados, pendentes } = useAssinaturas();
   const solicitarAssinatura = useSolicitarAssinatura();
@@ -52,7 +55,7 @@ export default function AssinaturaDocumentos() {
       <AppHeader perfil="Recursos Humanos" />
 
       <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false}>
           <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
             <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
             <Text style={s.voltarTexto}>Voltar</Text>
@@ -63,46 +66,48 @@ export default function AssinaturaDocumentos() {
 
           {!!erro && <Text style={s.erro}>{erro}</Text>}
 
-          {/* Documentos assinados */}
-          <Card style={s.secao}>
-            <CabecalhoSecao
-              total={assinados.length}
-              singular="Documento assinado"
-              plural="Documentos assinados"
-              aberto={assinadosAberto}
-              onPress={() => setAssinadosAberto((v) => !v)}
-            />
-            {assinadosAberto && (
-              <Lista
-                itens={assinados}
-                vazio="Nenhum documento assinado ainda."
-                subtitulo="Assinaturas concluídas"
-                expandidos={expandidos}
-                onAlternar={alternar}
+          <Grade colunas={r.colunas(2)} gap={r.largo ? 16 : 0}>
+            {/* Documentos assinados */}
+            <Card style={s.secao}>
+              <CabecalhoSecao
+                total={assinados.length}
+                singular="Documento assinado"
+                plural="Documentos assinados"
+                aberto={assinadosAberto}
+                onPress={() => setAssinadosAberto((v) => !v)}
               />
-            )}
-          </Card>
+              {assinadosAberto && (
+                <Lista
+                  itens={assinados}
+                  vazio="Nenhum documento assinado ainda."
+                  subtitulo="Assinaturas concluídas"
+                  expandidos={expandidos}
+                  onAlternar={alternar}
+                />
+              )}
+            </Card>
 
-          {/* Documentos pendentes */}
-          <Card style={s.secao}>
-            <CabecalhoSecao
-              total={pendentes.length}
-              singular="Documento pendente"
-              plural="Documentos pendentes"
-              aberto={pendentesAberto}
-              onPress={() => setPendentesAberto((v) => !v)}
-            />
-            {pendentesAberto && (
-              <Lista
-                itens={pendentes}
-                vazio="Nenhum documento pendente."
-                subtitulo="Assinaturas pendentes"
-                expandidos={expandidos}
-                onAlternar={alternar}
-                onSolicitar={solicitar}
+            {/* Documentos pendentes */}
+            <Card style={s.secao}>
+              <CabecalhoSecao
+                total={pendentes.length}
+                singular="Documento pendente"
+                plural="Documentos pendentes"
+                aberto={pendentesAberto}
+                onPress={() => setPendentesAberto((v) => !v)}
               />
-            )}
-          </Card>
+              {pendentesAberto && (
+                <Lista
+                  itens={pendentes}
+                  vazio="Nenhum documento pendente."
+                  subtitulo="Assinaturas pendentes"
+                  expandidos={expandidos}
+                  onAlternar={alternar}
+                  onSolicitar={solicitar}
+                />
+              )}
+            </Card>
+          </Grade>
         </ScrollView>
 
         {/* Aviso (toast) ao solicitar assinatura — nada é enviado por enquanto */}

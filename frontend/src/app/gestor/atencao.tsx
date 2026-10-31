@@ -8,12 +8,14 @@ import { AppHeader } from '@/components/app-header';
 import { AssinaturaTexto } from '@/components/assinatura-texto';
 import { BotaoComAviso } from '@/components/botao-com-aviso';
 import { Card } from '@/components/card';
+import { Grade } from '@/components/grade';
 import { SuccessBanner } from '@/components/success-banner';
 import { useAcoesGestor, useAtencao, useConclusaoGestor } from '@/data/data-context';
 import { formatarData } from '@/data/format';
 import type { ItemAtencao } from '@/data/queries';
 import { abrirPdf } from '@/services/pdf/abrir-pdf';
 import { documentoConclusao } from '@/services/pdf/conclusao';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 /*
  * "Documentos" do gestor: tudo o que precisa da atenção dele e o histórico do que já foi feito.
@@ -25,6 +27,7 @@ import { documentoConclusao } from '@/services/pdf/conclusao';
  */
 
 export default function DocumentosGestor() {
+  const r = useResponsivo();
   const router = useRouter();
   const { item, ok } = useLocalSearchParams<{ item?: string; ok?: string }>();
   const { pendentes, historico } = useAtencao();
@@ -74,7 +77,7 @@ export default function DocumentosGestor() {
       <AppHeader perfil="Gestor" />
 
       <View style={{ flex: 1 }}>
-        <ScrollView ref={rolagem} contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={rolagem} contentContainerStyle={[s.content, r.conteudo]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
             <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
             <Text style={s.voltarTexto}>Voltar</Text>
@@ -87,7 +90,7 @@ export default function DocumentosGestor() {
 
           <Text style={s.secao}>Pendentes ({pendentes.length})</Text>
           {pendentes.length === 0 && <Text style={s.vazio}>Nada pendente por aqui.</Text>}
-          <View style={s.lista}>
+          <Grade colunas={r.colunas(2)} gap={14} style={s.lista}>
             {pendentes.map((c) => (
               <Cartao
                 key={c.id}
@@ -106,16 +109,18 @@ export default function DocumentosGestor() {
                 }
               />
             ))}
-          </View>
+          </Grade>
 
           <Text style={s.secao}>Histórico ({lista.length})</Text>
           {lista.length === 0 && <Text style={s.vazio}>Você ainda não enviou feedbacks nem assinou documentos.</Text>}
-          <View style={s.lista} onLayout={(e) => setYHistorico(e.nativeEvent.layout.y)}>
-            {lista.map((c) => (
-              <View key={c.id} onLayout={c.id === foco?.id ? (e) => setYFoco(e.nativeEvent.layout.y) : undefined}>
-                <Cartao c={c} aberto={!!abertos[c.id]} onAlternar={() => alternar(c.id)} />
-              </View>
-            ))}
+          <View onLayout={(e) => setYHistorico(e.nativeEvent.layout.y)}>
+            <Grade colunas={r.colunas(2)} gap={14} style={s.lista}>
+              {lista.map((c) => (
+                <View key={c.id} onLayout={c.id === foco?.id ? (e) => setYFoco(e.nativeEvent.layout.y) : undefined}>
+                  <Cartao c={c} aberto={!!abertos[c.id]} onAlternar={() => alternar(c.id)} />
+                </View>
+              ))}
+            </Grade>
           </View>
         </ScrollView>
 

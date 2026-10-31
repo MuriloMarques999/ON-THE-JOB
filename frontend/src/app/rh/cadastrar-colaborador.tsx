@@ -17,6 +17,7 @@ import { AppHeader } from '@/components/app-header';
 import { useCadastro, useGestores } from '@/data/data-context';
 import { SuccessBanner } from '@/components/success-banner';
 import { Campo, EMAIL_RE, formatarTelefone, formStyles, PLACEHOLDER } from '@/components/form-campo';
+import { useResponsivo } from '@/hooks/use-responsivo';
 
 type Form = { nome: string; email: string; telefone: string; cargo: string; gestor: string };
 type Erros = Partial<Record<keyof Form, string>>;
@@ -34,6 +35,7 @@ function validar(f: Form): Erros {
 }
 
 export default function CadastrarColaborador() {
+  const r = useResponsivo();
   const router = useRouter();
   const gestores = useGestores();
   const { cadastrarColaborador } = useCadastro();
@@ -83,7 +85,7 @@ export default function CadastrarColaborador() {
       <AppHeader perfil="Recursos Humanos" />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[s.content, r.conteudoEstreito]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Pressable style={s.voltar} onPress={voltar} hitSlop={8} accessibilityRole="button">
             <MaterialCommunityIcons name="arrow-left" size={16} color="#111" />
             <Text style={s.voltarTexto}>Voltar</Text>
