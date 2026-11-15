@@ -4,10 +4,14 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js", 
+    "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "criar-rh": "node src/scripts/criar-rh.js",
-    "seed": "node src/scripts/seed-teste.js"
+    "seed": "node src/scripts/seed-teste.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:unit": "cross-env NODE_ENV=test jest --runInBand",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --coverageReporters=text-summary --runInBand",
+    "test:criticos": "cross-env NODE_ENV=test jest --runInBand -t \"\\[CRITICO\\]\""
   },
   "keywords": [],
   "author": "",
@@ -22,6 +26,8 @@
     "mysql2": "^3.24.6"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.5.2",
     "nodemon": "^3.1.14"
   }
 }
