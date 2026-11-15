@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('../config/db');
 const { registrarEvento } = require('../services/eventos');
+const { enviarConvite } = require('../services/email');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -43,16 +44,18 @@ async function criar(req, res) {
 
     // Histórico exibido na home do RH
     await registrarEvento(`Convite enviado para o gestor ${nome.trim()} (${emailNorm}).`, conn);
+    await enviarConvite({ nome: nome.trim(), email: emailNorm, perfil: 'gestor', token });
     await conn.commit();
-
-    const base = process.env.APP_URL || 'http://localhost:8081';
-    console.log(`Convite gestor: ${base}/concluir-conta?perfil=gestor&email=${encodeURIComponent(emailNorm).replace('%40', '@')}&token=${token}`);
 
     return res.status(201).json({ id: String(g.insertId), nome: nome.trim(), email: emailNorm });
   } catch (e) {
     await conn.rollback();
     if (e.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ erro: 'Já existe uma pessoa cadastrada com este e-mail.' });
+    }
+    if (e.codigo === 'RESEND_CONFIG ausente' || e.codigo === 'RESEND_ENVIO') {
+      console.error(e);
+      return res.status(502).json({ erro: 'Não foi possível enviar o convite por e-mail.' });
     }
     console.error(e);
     return res.status(500).json({ erro: 'Erro interno. Tente novamente.' });

@@ -65,6 +65,8 @@ A API roda em `http://localhost:3000`. Para checar se está no ar: `GET /teste`.
 | `JWT_SECRET` | Segredo usado para assinar os tokens |
 | `JWT_EXPIRES_IN` | Validade do token |
 | `APP_URL` | Endereço do front, usado para montar o link do convite |
+| `RESEND_API_KEY` | Chave secreta da API do Resend |
+| `RESEND_FROM` | Remetente verificado no Resend |
 
 ## Estrutura do código
 
@@ -149,7 +151,7 @@ Todas as rotas, exceto as de `/auth`, exigem o token. Erros voltam como `{ "erro
 
 ## Limitações e pendências conhecidas
 
-- **E-mail do convite:** ainda não é enviado. O link do convite aparece no console do servidor (linhas `[api]`) e é entregue manualmente.
+- **E-mail do convite:** enviado pelo Resend. É necessário verificar o domínio remetente no Resend e preencher `RESEND_API_KEY` e `RESEND_FROM`.
 - **Notificações e lembretes** (e-mail e WhatsApp) não estão implementados. O botão "solicitar assinatura" só registra o pedido.
 - O login do front fica só em memória: ao recarregar a página, é preciso entrar de novo.
 - A biblioteca de documentos é uma lista fixa de 4 itens; os arquivos PDF ainda não são servidos pelo backend.
